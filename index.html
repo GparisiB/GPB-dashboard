@@ -403,6 +403,7 @@
 
         .stat-box .value.positive { color: var(--green-light); }
         .stat-box .value.negative { color: var(--red-light); }
+        .stat-box .value.warning { color: #f0b90b; }
 
         .stat-box .label {
             font-size: 0.7rem;
@@ -934,6 +935,10 @@
                     <div class="label">Profit</div>
                 </div>
                 <div class="stat-box">
+                    <div class="value warning" id="investedAmount">$0</div>
+                    <div class="label">Invertido</div>
+                </div>
+                <div class="stat-box">
                     <div class="value" id="aiCalls">0</div>
                     <div class="label">Consultas IA</div>
                 </div>
@@ -1018,13 +1023,13 @@
                 { id: 'aptos', symbol: 'APTUSDT', display: 'APT/USDT' },
                 { id: 'arbitrum', symbol: 'ARBUSDT', display: 'ARB/USDT' }
             ],
-            updateInterval: 20000,
+            updateInterval: 60000,
             binanceAPI: 'https://api.binance.com/api/v3',
             aiProviders: {
                 groq: {
                     name: 'Groq',
                     url: 'https://api.groq.com/openai/v1/chat/completions',
-                    model: 'llama-3.3-70b-versatile',
+                    model: 'llama-3.1-8b-instant',
                     keyPrefix: 'gsk_'
                 },
                 claude: {
@@ -1185,42 +1190,85 @@
         async function askAIForDecision(opportunities) {
             if (!state.aiConnected || opportunities.length === 0) return [];
 
-            const topOpps = opportunities.slice(0, 5); // Solo analizar las mejores 5
+            const topOpps = opportunities.slice(0, 5); // Analizar las mejores 5
 
-            const prompt = `Eres un trader experto de criptomonedas. Analiza estas oportunidades y decide cuales ejecutar.
+            // MEJORA 2: Obtener correlacion BTC
+            const btcCorrelation = getBTCCorrelation();
 
-REGLAS:
-- Solo recomienda trades con alta probabilidad de exito
-- Prioriza micro-ganancias seguras sobre grandes riesgos
-- Responde SOLO en formato JSON
+            // MEJORA 4: Obtener memoria de trades
+            const tradeMemory = getTradeMemory();
 
-OPORTUNIDADES:
-${topOpps.map((o, i) => `
-${i+1}. ${o.symbol}
-   - Precio: $${o.price}
-   - Cambio 24h: ${o.change24h.toFixed(2)}%
-   - RSI: ${o.indicators.rsi}
-   - MACD: ${o.indicators.macd}
-   - Senal: ${o.action}
-   - Score: ${o.score}/100
-   - Confluencia: ${o.confluence.long} LONG / ${o.confluence.short} SHORT
-   - Volatilidad: ${o.volatility.toFixed(2)}%
+            // Preparar datos enriquecidos para cada oportunidad
+            const enrichedOpps = await Promise.all(topOpps.map(async (o) => {
+                // Obtener datos historicos con opens para patrones de velas
+                const hist = state.historicalData[o.symbol];
+                let candlePattern = { pattern: 'none', signal: 'neutral', strength: 0 };
+                let mtfAnalysis = { aligned: false, direction: 'neutral', confidence: 0 };
+
+                if (hist && hist.opens) {
+                    // MEJORA 1: Detectar patrones de velas
+                    candlePattern = detectCandlePatterns(hist.opens, hist.highs, hist.lows, hist.closes);
+                }
+
+                // MEJORA 3: Analisis multi-timeframe (solo para top 3 para ahorrar tokens)
+                if (topOpps.indexOf(o) < 3) {
+                    const mtfData = await fetchMultiTimeframeData(o.symbol);
+                    mtfAnalysis = analyzeMultiTimeframe(mtfData);
+                }
+
+                // MEJORA 4: Verificar si debemos evitar este trade
+                const avoidCheck = shouldAvoidTrade(o.symbol, o.action);
+
+                return { ...o, candlePattern, mtfAnalysis, avoidCheck };
+            }));
+
+            const prompt = `Eres un trader experto de criptomonedas. Analiza estas oportunidades con TODA la informacion disponible.
+
+=== CONTEXTO DEL MERCADO ===
+- BTC Tendencia: ${btcCorrelation.trend} (${btcCorrelation.change}% cambio reciente)
+- BTC Fuerza: ${btcCorrelation.strength}/100
+${btcCorrelation.trend === 'bearish' ? '⚠️ IMPORTANTE: BTC bajando - ser CAUTELOSO con LONGs en altcoins' : ''}
+${btcCorrelation.trend === 'bullish' ? '✅ BTC alcista - bueno para LONGs' : ''}
+
+=== MEMORIA DE TRADES (APRENDIZAJE) ===
+- Win Rate historico: ${tradeMemory.overallWinRate}%
+- Trades analizados: ${tradeMemory.totalWins + tradeMemory.totalLosses}
+${tradeMemory.insights.slice(0, 3).map(i => `- ${i.message}`).join('\n')}
+
+=== REGLAS DE DECISION ===
+1. PATRONES DE VELAS (muy importante):
+   - hammer/morning_star/bullish_engulfing = LONG fuerte
+   - shooting_star/evening_star/bearish_engulfing = SHORT fuerte
+   - doji = posible reversa, esperar confirmacion
+
+2. MULTI-TIMEFRAME:
+   - Si 3 timeframes alineados (15m+1h+4h) = confianza +20%
+   - Si timeframes contradictorios = reducir confianza
+
+3. CORRELACION BTC:
+   - BTC bajando + altcoin LONG = REDUCIR confianza o SKIP
+   - BTC subiendo + altcoin LONG = AUMENTAR confianza
+
+4. MEMORIA DE TRADES:
+   - Si un patron tiene <40% win rate historico = SKIP
+   - Si es hora con mal historial = SKIP
+
+5. INDICADORES TECNICOS:
+   - RSI < 30 + patron alcista = LONG 80%+
+   - RSI > 70 + patron bajista = SHORT 80%+
+
+=== OPORTUNIDADES ===
+${enrichedOpps.map((o, i) => `
+${i+1}. ${o.symbol} ${o.avoidCheck.avoid ? '⚠️ HISTORIAL NEGATIVO' : ''}
+   📊 Indicadores: RSI=${o.indicators.rsi}, MACD=${o.indicators.macd}, Score=${o.score}/100
+   🕯️ Patron Vela: ${o.candlePattern.pattern} (${o.candlePattern.signal}, fuerza: ${o.candlePattern.strength})
+   📈 Multi-TF: ${o.mtfAnalysis.aligned ? '✅ ALINEADO' : '❌ No alineado'} ${o.mtfAnalysis.direction} (conf: ${o.mtfAnalysis.confidence}%)
+   💹 Volatilidad: ${o.volatility.toFixed(2)}% | Cambio24h: ${o.change24h.toFixed(2)}%
+   ${o.avoidCheck.avoid ? `⛔ EVITAR: ${o.avoidCheck.reason}` : ''}
 `).join('')}
 
-Responde EXACTAMENTE en este formato JSON:
-{
-  "decisions": [
-    {
-      "symbol": "BTC/USDT",
-      "action": "LONG" o "SHORT" o "SKIP",
-      "confidence": 0-100,
-      "reasoning": "explicacion breve",
-      "suggestedSL": 1.5,
-      "suggestedTP": 3.0
-    }
-  ],
-  "marketAnalysis": "breve analisis del mercado"
-}`;
+Responde en JSON:
+{"decisions":[{"symbol":"XXX/USDT","action":"LONG/SHORT/SKIP","confidence":0-100,"reasoning":"breve"}],"marketAnalysis":"resumen"}`;
 
             document.getElementById('aiThinking').classList.add('active');
 
@@ -1290,6 +1338,7 @@ Responde EXACTAMENTE en este formato JSON:
                 const klines = await r.json();
 
                 return {
+                    opens: klines.map(k => parseFloat(k[1])),  // Agregado para patrones de velas
                     closes: klines.map(k => parseFloat(k[4])),
                     highs: klines.map(k => parseFloat(k[2])),
                     lows: klines.map(k => parseFloat(k[3])),
@@ -1345,6 +1394,282 @@ Responde EXACTAMENTE en este formato JSON:
             const ll = Math.min(...lows.slice(-period));
             if (hh === ll) return 50;
             return ((closes[closes.length - 1] - ll) / (hh - ll)) * 100;
+        }
+
+        // =====================================================
+        // MEJORA 1: DETECCION DE PATRONES DE VELAS
+        // =====================================================
+        function detectCandlePatterns(opens, highs, lows, closes) {
+            if (!opens || opens.length < 3) return { pattern: 'none', signal: 'neutral', strength: 0 };
+
+            const i = closes.length - 1;
+            const body = Math.abs(closes[i] - opens[i]);
+            const upperWick = highs[i] - Math.max(closes[i], opens[i]);
+            const lowerWick = Math.min(closes[i], opens[i]) - lows[i];
+            const range = highs[i] - lows[i];
+            const isBullish = closes[i] > opens[i];
+
+            // Doji - indecision, posible reversa
+            if (body < range * 0.1) {
+                return { pattern: 'doji', signal: 'reversal', strength: 60 };
+            }
+
+            // Hammer - señal alcista fuerte
+            if (lowerWick > body * 2 && upperWick < body * 0.5 && !isBullish) {
+                return { pattern: 'hammer', signal: 'bullish', strength: 80 };
+            }
+
+            // Inverted Hammer - señal alcista
+            if (upperWick > body * 2 && lowerWick < body * 0.5 && !isBullish) {
+                return { pattern: 'inverted_hammer', signal: 'bullish', strength: 70 };
+            }
+
+            // Shooting Star - señal bajista
+            if (upperWick > body * 2 && lowerWick < body * 0.5 && isBullish) {
+                return { pattern: 'shooting_star', signal: 'bearish', strength: 75 };
+            }
+
+            // Hanging Man - señal bajista
+            if (lowerWick > body * 2 && upperWick < body * 0.5 && isBullish) {
+                return { pattern: 'hanging_man', signal: 'bearish', strength: 70 };
+            }
+
+            // Bullish Engulfing
+            if (i > 0 && closes[i] > opens[i] && closes[i-1] < opens[i-1] &&
+                closes[i] > opens[i-1] && opens[i] < closes[i-1]) {
+                return { pattern: 'bullish_engulfing', signal: 'bullish', strength: 85 };
+            }
+
+            // Bearish Engulfing
+            if (i > 0 && closes[i] < opens[i] && closes[i-1] > opens[i-1] &&
+                closes[i] < opens[i-1] && opens[i] > closes[i-1]) {
+                return { pattern: 'bearish_engulfing', signal: 'bearish', strength: 85 };
+            }
+
+            // Morning Star (3 velas)
+            if (i > 1 && closes[i-2] < opens[i-2] &&
+                Math.abs(closes[i-1] - opens[i-1]) < range * 0.3 &&
+                closes[i] > opens[i] && closes[i] > (opens[i-2] + closes[i-2]) / 2) {
+                return { pattern: 'morning_star', signal: 'bullish', strength: 90 };
+            }
+
+            // Evening Star (3 velas)
+            if (i > 1 && closes[i-2] > opens[i-2] &&
+                Math.abs(closes[i-1] - opens[i-1]) < range * 0.3 &&
+                closes[i] < opens[i] && closes[i] < (opens[i-2] + closes[i-2]) / 2) {
+                return { pattern: 'evening_star', signal: 'bearish', strength: 90 };
+            }
+
+            return { pattern: 'none', signal: 'neutral', strength: 0 };
+        }
+
+        // =====================================================
+        // MEJORA 2: CORRELACION CON BTC
+        // =====================================================
+        function getBTCCorrelation() {
+            const btcData = state.historicalData['BTC/USDT'];
+            if (!btcData || !btcData.closes || btcData.closes.length < 10) {
+                return { trend: 'neutral', strength: 0, change: 0 };
+            }
+
+            const closes = btcData.closes;
+            const recent = closes.slice(-5);
+            const older = closes.slice(-10, -5);
+
+            const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+            const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
+            const change = ((recentAvg - olderAvg) / olderAvg) * 100;
+
+            let trend = 'neutral';
+            let strength = Math.min(100, Math.abs(change) * 20);
+
+            if (change > 0.5) trend = 'bullish';
+            else if (change < -0.5) trend = 'bearish';
+
+            return { trend, strength, change: change.toFixed(2) };
+        }
+
+        // =====================================================
+        // MEJORA 3: ANALISIS MULTI-TIMEFRAME
+        // =====================================================
+        async function fetchMultiTimeframeData(symbol) {
+            try {
+                const binanceSymbol = CONFIG.cryptos.find(c => c.display === symbol)?.symbol;
+                if (!binanceSymbol) return null;
+
+                // Obtener datos de 15m, 1h y 4h en paralelo
+                const [klines15m, klines1h, klines4h] = await Promise.all([
+                    fetch(`${CONFIG.binanceAPI}/klines?symbol=${binanceSymbol}&interval=15m&limit=50`).then(r => r.json()),
+                    fetch(`${CONFIG.binanceAPI}/klines?symbol=${binanceSymbol}&interval=1h&limit=50`).then(r => r.json()),
+                    fetch(`${CONFIG.binanceAPI}/klines?symbol=${binanceSymbol}&interval=4h&limit=50`).then(r => r.json())
+                ]);
+
+                const processKlines = (klines) => ({
+                    opens: klines.map(k => parseFloat(k[1])),
+                    highs: klines.map(k => parseFloat(k[2])),
+                    lows: klines.map(k => parseFloat(k[3])),
+                    closes: klines.map(k => parseFloat(k[4]))
+                });
+
+                return {
+                    tf15m: processKlines(klines15m),
+                    tf1h: processKlines(klines1h),
+                    tf4h: processKlines(klines4h)
+                };
+            } catch (e) {
+                console.error('Multi-timeframe fetch error:', e);
+                return null;
+            }
+        }
+
+        function analyzeMultiTimeframe(mtfData) {
+            if (!mtfData) return { aligned: false, direction: 'neutral', confidence: 0 };
+
+            const trends = [];
+
+            for (const [tf, data] of Object.entries(mtfData)) {
+                if (data.closes.length > 20) {
+                    const ema9 = calculateEMA(data.closes, 9);
+                    const ema21 = calculateEMA(data.closes, 21);
+                    const rsi = calculateRSI(data.closes);
+
+                    let trend = 'neutral';
+                    if (ema9 > ema21 && rsi > 50) trend = 'bullish';
+                    else if (ema9 < ema21 && rsi < 50) trend = 'bearish';
+
+                    trends.push({ tf, trend, rsi });
+                }
+            }
+
+            const bullishCount = trends.filter(t => t.trend === 'bullish').length;
+            const bearishCount = trends.filter(t => t.trend === 'bearish').length;
+
+            let direction = 'neutral';
+            let aligned = false;
+            let confidence = 0;
+
+            if (bullishCount === 3) {
+                direction = 'bullish';
+                aligned = true;
+                confidence = 90;
+            } else if (bearishCount === 3) {
+                direction = 'bearish';
+                aligned = true;
+                confidence = 90;
+            } else if (bullishCount === 2) {
+                direction = 'bullish';
+                confidence = 60;
+            } else if (bearishCount === 2) {
+                direction = 'bearish';
+                confidence = 60;
+            }
+
+            return { aligned, direction, confidence, details: trends };
+        }
+
+        // =====================================================
+        // MEJORA 4: MEMORIA DE TRADES (APRENDIZAJE)
+        // =====================================================
+        function getTradeMemory() {
+            // Analizar trades anteriores para encontrar patrones
+            const history = state.tradeHistory.slice(-50); // ultimos 50 trades
+            if (history.length < 5) return { insights: [], winningPatterns: [], losingPatterns: [] };
+
+            const winningTrades = history.filter(t => t.pnl > 0);
+            const losingTrades = history.filter(t => t.pnl <= 0);
+
+            // Analizar patrones ganadores
+            const winningPatterns = {};
+            const losingPatterns = {};
+
+            for (const trade of winningTrades) {
+                const key = `${trade.symbol}_${trade.action}`;
+                winningPatterns[key] = (winningPatterns[key] || 0) + 1;
+            }
+
+            for (const trade of losingTrades) {
+                const key = `${trade.symbol}_${trade.action}`;
+                losingPatterns[key] = (losingPatterns[key] || 0) + 1;
+            }
+
+            // Generar insights
+            const insights = [];
+
+            // Encontrar mejores y peores combinaciones
+            for (const [key, wins] of Object.entries(winningPatterns)) {
+                const losses = losingPatterns[key] || 0;
+                const winRate = wins / (wins + losses) * 100;
+                if (winRate > 65) {
+                    insights.push({ type: 'positive', pattern: key, winRate: winRate.toFixed(0) + '%', message: `${key} tiene ${winRate.toFixed(0)}% win rate` });
+                }
+            }
+
+            for (const [key, losses] of Object.entries(losingPatterns)) {
+                const wins = winningPatterns[key] || 0;
+                const winRate = wins / (wins + losses) * 100;
+                if (winRate < 35 && (wins + losses) >= 3) {
+                    insights.push({ type: 'negative', pattern: key, winRate: winRate.toFixed(0) + '%', message: `EVITAR ${key} - solo ${winRate.toFixed(0)}% win rate` });
+                }
+            }
+
+            // Analizar horarios
+            const hourlyPerformance = {};
+            for (const trade of history) {
+                const hour = new Date(trade.openTime).getHours();
+                if (!hourlyPerformance[hour]) hourlyPerformance[hour] = { wins: 0, losses: 0 };
+                if (trade.pnl > 0) hourlyPerformance[hour].wins++;
+                else hourlyPerformance[hour].losses++;
+            }
+
+            let bestHour = null, worstHour = null;
+            let bestWinRate = 0, worstWinRate = 100;
+
+            for (const [hour, perf] of Object.entries(hourlyPerformance)) {
+                const total = perf.wins + perf.losses;
+                if (total >= 3) {
+                    const wr = (perf.wins / total) * 100;
+                    if (wr > bestWinRate) { bestWinRate = wr; bestHour = hour; }
+                    if (wr < worstWinRate) { worstWinRate = wr; worstHour = hour; }
+                }
+            }
+
+            if (bestHour !== null) {
+                insights.push({ type: 'time', message: `Mejor hora: ${bestHour}:00 (${bestWinRate.toFixed(0)}% wins)` });
+            }
+            if (worstHour !== null && worstWinRate < 40) {
+                insights.push({ type: 'time_warning', message: `Evitar hora: ${worstHour}:00 (${worstWinRate.toFixed(0)}% wins)` });
+            }
+
+            return {
+                insights,
+                winningPatterns: Object.keys(winningPatterns),
+                losingPatterns: Object.keys(losingPatterns),
+                totalWins: winningTrades.length,
+                totalLosses: losingTrades.length,
+                overallWinRate: history.length > 0 ? (winningTrades.length / history.length * 100).toFixed(1) : 0
+            };
+        }
+
+        function shouldAvoidTrade(symbol, action) {
+            const memory = getTradeMemory();
+            const key = `${symbol}_${action}`;
+
+            // Buscar si esta combinación tiene mal historial
+            for (const insight of memory.insights) {
+                if (insight.type === 'negative' && insight.pattern === key) {
+                    return { avoid: true, reason: insight.message };
+                }
+            }
+
+            // Verificar hora actual
+            const currentHour = new Date().getHours();
+            for (const insight of memory.insights) {
+                if (insight.type === 'time_warning' && insight.message.includes(`${currentHour}:00`)) {
+                    return { avoid: true, reason: insight.message };
+                }
+            }
+
+            return { avoid: false, reason: null };
         }
 
         function analyzeAsset(data, historical) {
@@ -1532,9 +1857,10 @@ Responde EXACTAMENTE en este formato JSON:
                 opportunities.sort((a, b) => b.score - a.score);
                 state.opportunities = opportunities;
 
-                // Consultar a la IA si hay oportunidades buenas
-                if (state.aiConnected && opportunities.length > 0) {
-                    const aiDecisions = await askAIForDecision(opportunities);
+                // Consultar a la IA SOLO si hay oportunidades con score > 50 y accion clara
+                const goodOpps = opportunities.filter(o => o.score >= 50 && o.action !== 'OBSERVAR');
+                if (state.aiConnected && goodOpps.length > 0) {
+                    const aiDecisions = await askAIForDecision(goodOpps);
 
                     for (const decision of aiDecisions) {
                         const minConfidence = parseInt(document.getElementById('minConfidence').value) || 50;
@@ -1722,10 +2048,14 @@ Responde EXACTAMENTE en este formato JSON:
             const wins = state.tradeHistory.filter(t => t.pnl > 0).length;
             const profit = state.tradeHistory.reduce((s, t) => s + t.pnl, 0);
 
+            // Calcular dinero invertido en trades activos
+            const invested = state.activeTrades.reduce((s, t) => s + t.amount, 0);
+
             document.getElementById('totalTrades').textContent = total;
             document.getElementById('winRate').textContent = total > 0 ? `${Math.round(wins / total * 100)}%` : '0%';
             document.getElementById('totalProfit').textContent = `$${profit.toFixed(0)}`;
             document.getElementById('totalProfit').className = `value ${profit >= 0 ? 'positive' : 'negative'}`;
+            document.getElementById('investedAmount').textContent = `$${invested.toFixed(0)}`;
         }
 
         function updateBalance() {
