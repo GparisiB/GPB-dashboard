@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Trading Dashboard V7 - Real AI Trading</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e14;
+            --bg-secondary: #131920;
+            --bg-tertiary: #1a2028;
+            --bg-card: #1e252e;
+            --border-color: #2a3441;
+            --text-primary: #e6edf3;
+            --text-secondary: #7d8590;
+            --green: #238636;
+            --green-light: #3fb950;
+            --green-glow: rgba(63, 185, 80, 0.3);
+            --red: #da3633;
+            --red-light: #f85149;
+            --red-glow: rgba(248, 81, 73, 0.3);
+            --blue: #58a6ff;
+            --yellow: #d29922;
+            --purple: #a371f7;
+            --purple-glow: rgba(163, 113, 247, 0.3);
+            --orange: #f0883e;
+            --cyan: #39c5cf;
+            --ai-gradient: linear-gradient(135deg, #f97316, #a371f7, #39c5cf);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .header-left h1 {
+            font-size: 1.5rem;
+            background: var(--ai-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-left .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .header-center {
+            display: flex;
+            gap: 15px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 15px;
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.green { background: var(--green-light); box-shadow: 0 0 10px var(--green-glow); }
+        .status-dot.red { background: var(--red-light); }
+        .status-dot.yellow { background: var(--yellow); }
+        .status-dot.cyan { background: var(--cyan); box-shadow: 0 0 10px rgba(57, 197, 207, 0.5); }
+        .status-dot.orange { background: var(--orange); box-shadow: 0 0 10px rgba(249, 115, 22, 0.5); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .header-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        /* AI Provider Badge */
+        .ai-provider-badge {
+            background: var(--ai-gradient);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 10px rgba(249, 115, 22, 0.3); }
+            to { box-shadow: 0 0 20px rgba(57, 197, 207, 0.5), 0 0 30px rgba(163, 113, 247, 0.3); }
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr 340px;
+            gap: 15px;
+            max-width: 1900px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1400px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-badge {
+            background: var(--bg-tertiary);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* AI Config Panel */
+        .ai-config-panel {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(163, 113, 247, 0.1), rgba(57, 197, 207, 0.1));
+            border: 1px solid var(--orange);
+        }
+
+        .ai-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .ai-option {
+            padding: 12px 8px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            background: var(--bg-tertiary);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .ai-option:hover {
+            border-color: var(--purple);
+        }
+
+        .ai-option.active {
+            border-color: var(--orange);
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(163, 113, 247, 0.1));
+        }
+
+        .ai-option .icon { font-size: 1.5rem; display: block; margin-bottom: 5px; }
+        .ai-option .name { font-size: 0.85rem; font-weight: 600; }
+        .ai-option .cost { font-size: 0.7rem; color: var(--text-secondary); }
+
+        .api-key-input {
+            margin-bottom: 15px;
+        }
+
+        .api-key-input label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .api-key-input input {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        .api-key-input input:focus {
+            border-color: var(--orange);
+            outline: none;
+        }
+
+        .ai-status-box {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .ai-status-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .ai-status-text {
+            font-size: 0.9rem;
+            color: var(--cyan);
+        }
+
+        .ai-thinking {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(57, 197, 207, 0.1));
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .ai-thinking.active {
+            display: flex;
+        }
+
+        .thinking-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .thinking-dots span {
+            width: 8px;
+            height: 8px;
+            background: var(--orange);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .thinking-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .thinking-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Control Panel */
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group-title {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .input-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+
+        .input-field label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .input-field input, .input-field select {
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .slider-field {
+            margin-bottom: 12px;
+        }
+
+        .slider-field .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+        }
+
+        .slider-field .slider-header span:first-child { color: var(--text-secondary); }
+        .slider-field .slider-header span:last-child { color: var(--orange); font-weight: 600; }
+
+        .slider-field input[type="range"] {
+            width: 100%;
+            height: 4px;
+            -webkit-appearance: none;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+        }
+
+        .slider-field input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--orange);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 8px;
+        }
+
+        .btn-ai {
+            background: var(--ai-gradient);
+            color: white;
+        }
+
+        .btn-ai:hover {
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.4), 0 0 30px rgba(57, 197, 207, 0.3);
+        }
+
+        .btn-ai:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-danger { background: var(--red); color: white; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .stat-box {
+            padding: 12px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-box .value {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .stat-box .value.positive { color: var(--green-light); }
+        .stat-box .value.negative { color: var(--red-light); }
+
+        .stat-box .label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Main Panel */
+        .main-panel {
+            border: 2px solid var(--orange);
+            box-shadow: 0 0 30px rgba(249, 115, 22, 0.2);
+        }
+
+        .balance-hero {
+            text-align: center;
+            padding: 25px;
+            background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-card));
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .balance-hero .amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--ai-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .balance-hero .change {
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+
+        .balance-hero .change.positive { color: var(--green-light); }
+        .balance-hero .change.negative { color: var(--red-light); }
+
+        /* Trades */
+        .trades-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: calc(100vh - 380px);
+            overflow-y: auto;
+        }
+
+        .trade-card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .trade-card:hover {
+            border-color: var(--orange);
+        }
+
+        .trade-card.long { border-left: 4px solid var(--green-light); }
+        .trade-card.short { border-left: 4px solid var(--red-light); }
+
+        .trade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .trade-symbol {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .trade-type {
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .trade-type.long { background: var(--green); color: white; }
+        .trade-type.short { background: var(--red); color: white; }
+
+        .ai-tag {
+            padding: 3px 8px;
+            background: var(--ai-gradient);
+            border-radius: 8px;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .trade-prices {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .trade-price-item {
+            text-align: center;
+            padding: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+        }
+
+        .trade-price-item .label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+        }
+
+        .trade-price-item .value {
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .pnl-display {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .pnl-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .pnl-value.positive { color: var(--green-light); }
+        .pnl-value.negative { color: var(--red-light); }
+
+        /* AI Response Box */
+        .ai-response-box {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(163, 113, 247, 0.05));
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--orange);
+        }
+
+        .ai-response-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--orange);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ai-response-text {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        .ai-model-tag {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .btn-close-trade {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-close-trade:hover {
+            background: var(--red);
+            border-color: var(--red);
+            color: white;
+        }
+
+        .empty-trades {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-trades .icon { font-size: 3rem; margin-bottom: 15px; }
+
+        /* Right Panel */
+        .analysis-panel {
+            background: var(--bg-primary);
+        }
+
+        /* AI Chat */
+        .ai-chat-container {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .ai-message {
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        .ai-message.ai {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(57, 197, 207, 0.1));
+            border-left: 3px solid var(--orange);
+        }
+
+        .ai-message.system {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+        }
+
+        .ai-message .timestamp {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        /* Opportunities */
+        .opps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: calc(100vh - 550px);
+            overflow-y: auto;
+        }
+
+        .opp-card {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 12px;
+            border-left: 3px solid var(--blue);
+            transition: all 0.2s;
+        }
+
+        .opp-card.executing {
+            border-left-color: var(--orange);
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(163, 113, 247, 0.05));
+            animation: executePulse 1.5s infinite;
+        }
+
+        @keyframes executePulse {
+            0%, 100% { box-shadow: 0 0 0 rgba(249, 115, 22, 0); }
+            50% { box-shadow: 0 0 15px rgba(249, 115, 22, 0.3); }
+        }
+
+        .opp-card.long { border-left-color: var(--green-light); }
+        .opp-card.short { border-left-color: var(--red-light); }
+
+        .opp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .opp-symbol { font-weight: 600; font-size: 0.95rem; }
+
+        .opp-action {
+            padding: 3px 10px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .opp-action.long { background: var(--green); color: white; }
+        .opp-action.short { background: var(--red); color: white; }
+        .opp-action.observar { background: var(--yellow); color: black; }
+
+        .opp-details {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+        }
+
+        .opp-ai-status {
+            font-size: 0.75rem;
+            padding: 5px 8px;
+            background: rgba(249, 115, 22, 0.1);
+            border-radius: 6px;
+            color: var(--orange);
+        }
+
+        /* History */
+        .history-container {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 0.85rem;
+        }
+
+        .history-result { font-weight: 600; }
+        .history-result.win { color: var(--green-light); }
+        .history-result.loss { color: var(--red-light); }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            padding: 12px 18px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            animation: slideIn 0.3s ease;
+            max-width: 350px;
+            font-size: 0.9rem;
+        }
+
+        .toast.ai {
+            border-left: 4px solid var(--orange);
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), var(--bg-secondary));
+        }
+
+        .toast.success { border-left: 4px solid var(--green-light); }
+        .toast.error { border-left: 4px solid var(--red-light); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Config Modal -->
+    <div class="modal" id="configModal">
+        <div class="modal-content">
+            <div class="modal-title">🔧 Configurar Firebase</div>
+            <div class="input-field">
+                <label>Firebase Database URL</label>
+                <input type="text" id="firebaseUrl" placeholder="https://tu-proyecto.firebaseio.com/">
+            </div>
+            <div class="input-field">
+                <label>Tu nombre</label>
+                <input type="text" id="userName" placeholder="Ej: Gerardo">
+            </div>
+            <button class="btn btn-ai" onclick="saveFirebaseConfig()">Guardar</button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <h1>Crypto Dashboard V7</h1>
+            <div class="subtitle">Real AI Trading | Groq + Claude + OpenAI</div>
+        </div>
+        <div class="header-center">
+            <div class="ai-provider-badge" id="aiProviderBadge">🤖 GROQ</div>
+            <div class="status-badge">
+                <div class="status-dot" id="apiStatus"></div>
+                <span id="apiStatusText">API</span>
+            </div>
+            <div class="status-badge">
+                <div class="status-dot" id="aiConnStatus"></div>
+                <span id="aiConnStatusText">IA</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button class="btn btn-outline" style="width: auto; margin: 0; padding: 8px 15px;" onclick="showConfigModal()">⚙️</button>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="main-layout">
+        <!-- Left: AI Config Panel -->
+        <div class="panel ai-config-panel">
+            <div class="panel-header">
+                <div class="panel-title">🧠 Configuracion IA</div>
+            </div>
+
+            <div class="control-group">
+                <div class="control-group-title">Proveedor de IA</div>
+                <div class="ai-selector">
+                    <div class="ai-option active" id="optGroq" onclick="selectAI('groq')">
+                        <span class="icon">⚡</span>
+                        <span class="name">Groq</span>
+                        <span class="cost">GRATIS</span>
+                    </div>
+                    <div class="ai-option" id="optClaude" onclick="selectAI('claude')">
+                        <span class="icon">🧠</span>
+                        <span class="name">Claude</span>
+                        <span class="cost">$0.003/req</span>
+                    </div>
+                    <div class="ai-option" id="optOpenai" onclick="selectAI('openai')">
+                        <span class="icon">💚</span>
+                        <span class="name">GPT-4</span>
+                        <span class="cost">$0.005/req</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="api-key-input">
+                <label id="apiKeyLabel">API Key de Groq</label>
+                <input type="password" id="aiApiKey" placeholder="gsk_...">
+            </div>
+
+            <button class="btn btn-outline" onclick="testAIConnection()">🔌 Probar Conexion</button>
+
+            <div class="ai-status-box">
+                <div class="ai-status-icon" id="aiStatusIcon">🤖</div>
+                <div class="ai-status-text" id="aiStatusText">Configurar API Key</div>
+            </div>
+
+            <div class="ai-thinking" id="aiThinking">
+                <div class="thinking-dots">
+                    <span></span><span></span><span></span>
+                </div>
+                <span>IA analizando...</span>
+            </div>
+
+            <div class="control-group">
+                <div class="control-group-title">Configuracion de Trading</div>
+                <div class="input-field">
+                    <label>Perfil de Riesgo</label>
+                    <select id="riskProfile">
+                        <option value="conservative">Conservador</option>
+                        <option value="moderate" selected>Moderado</option>
+                        <option value="aggressive">Agresivo</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <div class="input-field">
+                        <label>Balance Inicial</label>
+                        <input type="number" id="initialBalance" value="10000">
+                    </div>
+                    <div class="input-field">
+                        <label>% por Trade</label>
+                        <input type="number" id="tradePercent" value="2" min="1" max="10">
+                    </div>
+                </div>
+                <div class="slider-field">
+                    <div class="slider-header">
+                        <span>Max Trades</span>
+                        <span id="maxTradesValue">3</span>
+                    </div>
+                    <input type="range" id="maxTrades" min="1" max="5" value="3" oninput="document.getElementById('maxTradesValue').textContent = this.value">
+                </div>
+                <div class="slider-field">
+                    <div class="slider-header">
+                        <span>Confianza Minima IA</span>
+                        <span id="minConfidenceValue">50%</span>
+                    </div>
+                    <input type="range" id="minConfidence" min="30" max="90" value="50" oninput="document.getElementById('minConfidenceValue').textContent = this.value + '%'">
+                </div>
+            </div>
+
+            <button class="btn btn-ai" id="btnStart" onclick="toggleAI()">🚀 Iniciar IA</button>
+            <button class="btn btn-outline" onclick="resetSystem()">🗑️ Reset</button>
+
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="value" id="totalTrades">0</div>
+                    <div class="label">Total Trades</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="winRate">0%</div>
+                    <div class="label">Win Rate</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value positive" id="totalProfit">$0</div>
+                    <div class="label">Profit</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="aiCalls">0</div>
+                    <div class="label">Consultas IA</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Center: Active Trades -->
+        <div class="panel main-panel">
+            <div class="panel-header">
+                <div class="panel-title">🎯 TRADES ACTIVOS</div>
+                <div class="panel-badge" id="tradesCountBadge">0</div>
+            </div>
+
+            <div class="balance-hero">
+                <div class="amount" id="currentBalance">$10,000.00</div>
+                <div class="change" id="balanceChange">+$0.00 (0.00%)</div>
+            </div>
+
+            <div class="trades-container" id="tradesContainer">
+                <div class="empty-trades">
+                    <div class="icon">🤖</div>
+                    <div class="title">IA Real lista para operar</div>
+                    <div class="desc">Configura tu API Key e inicia la IA</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: AI Analysis -->
+        <div class="panel analysis-panel">
+            <div class="panel-header">
+                <div class="panel-title">💬 Respuestas de la IA</div>
+            </div>
+
+            <div class="ai-chat-container" id="aiChat">
+                <div class="ai-message system">
+                    <div>Sistema iniciado. Configura una API Key para comenzar.</div>
+                    <div class="timestamp">--:--:--</div>
+                </div>
+            </div>
+
+            <div class="panel-header">
+                <div class="panel-title">📊 Oportunidades</div>
+                <div class="panel-badge" id="oppsCountBadge">0</div>
+            </div>
+
+            <div class="opps-container" id="oppsContainer">
+                <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
+                    Esperando analisis...
+                </div>
+            </div>
+
+            <div class="panel-header" style="margin-top: 15px;">
+                <div class="panel-title">📜 Historial</div>
+            </div>
+            <div class="history-container" id="historyContainer">
+                <div style="padding: 15px; text-align: center; color: var(--text-secondary);">Sin historial</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================
+        // CONFIGURACION V7 - REAL AI TRADING
+        // =====================================================
+
+        const CONFIG = {
+            cryptos: [
+                { id: 'bitcoin', symbol: 'BTCUSDT', display: 'BTC/USDT' },
+                { id: 'ethereum', symbol: 'ETHUSDT', display: 'ETH/USDT' },
+                { id: 'solana', symbol: 'SOLUSDT', display: 'SOL/USDT' },
+                { id: 'binancecoin', symbol: 'BNBUSDT', display: 'BNB/USDT' },
+                { id: 'ripple', symbol: 'XRPUSDT', display: 'XRP/USDT' },
+                { id: 'cardano', symbol: 'ADAUSDT', display: 'ADA/USDT' },
+                { id: 'avalanche-2', symbol: 'AVAXUSDT', display: 'AVAX/USDT' },
+                { id: 'polkadot', symbol: 'DOTUSDT', display: 'DOT/USDT' },
+                { id: 'chainlink', symbol: 'LINKUSDT', display: 'LINK/USDT' },
+                { id: 'matic-network', symbol: 'MATICUSDT', display: 'MATIC/USDT' },
+                { id: 'cosmos', symbol: 'ATOMUSDT', display: 'ATOM/USDT' },
+                { id: 'uniswap', symbol: 'UNIUSDT', display: 'UNI/USDT' },
+                { id: 'litecoin', symbol: 'LTCUSDT', display: 'LTC/USDT' },
+                { id: 'near', symbol: 'NEARUSDT', display: 'NEAR/USDT' },
+                { id: 'aptos', symbol: 'APTUSDT', display: 'APT/USDT' },
+                { id: 'arbitrum', symbol: 'ARBUSDT', display: 'ARB/USDT' }
+            ],
+            updateInterval: 20000,
+            binanceAPI: 'https://api.binance.com/api/v3',
+            aiProviders: {
+                groq: {
+                    name: 'Groq',
+                    url: 'https://api.groq.com/openai/v1/chat/completions',
+                    model: 'llama-3.3-70b-versatile',
+                    keyPrefix: 'gsk_'
+                },
+                claude: {
+                    name: 'Claude',
+                    url: 'https://api.anthropic.com/v1/messages',
+                    model: 'claude-3-haiku-20240307',
+                    keyPrefix: 'sk-ant-'
+                },
+                openai: {
+                    name: 'OpenAI',
+                    url: 'https://api.openai.com/v1/chat/completions',
+                    model: 'gpt-4o-mini',
+                    keyPrefix: 'sk-'
+                }
+            }
+        };
+
+        const RISK_PROFILES = {
+            conservative: { stopLoss: 0.8, takeProfit: 1.2, tradePercent: 1.5 },
+            moderate: { stopLoss: 1.2, takeProfit: 2.4, tradePercent: 2 },
+            aggressive: { stopLoss: 2, takeProfit: 4, tradePercent: 3 }
+        };
+
+        let state = {
+            isRunning: false,
+            monitorInterval: null,
+            currentBalance: 10000,
+            initialBalance: 10000,
+            activeTrades: [],
+            tradeHistory: [],
+            opportunities: [],
+            historicalData: {},
+            aiProvider: 'groq',
+            aiApiKey: '',
+            aiConnected: false,
+            aiCalls: 0,
+            firebaseUrl: null,
+            userName: 'Usuario'
+        };
+
+        // =====================================================
+        // AI PROVIDERS
+        // =====================================================
+
+        function selectAI(provider) {
+            state.aiProvider = provider;
+            document.querySelectorAll('.ai-option').forEach(el => el.classList.remove('active'));
+            document.getElementById('opt' + provider.charAt(0).toUpperCase() + provider.slice(1)).classList.add('active');
+
+            const labels = { groq: 'API Key de Groq', claude: 'API Key de Claude', openai: 'API Key de OpenAI' };
+            document.getElementById('apiKeyLabel').textContent = labels[provider];
+            document.getElementById('aiProviderBadge').textContent = '🤖 ' + CONFIG.aiProviders[provider].name.toUpperCase();
+
+            // Load saved key for this provider
+            const savedKey = localStorage.getItem(`aiKey_${provider}`);
+            if (savedKey) {
+                document.getElementById('aiApiKey').value = savedKey;
+            } else {
+                document.getElementById('aiApiKey').value = '';
+            }
+
+            state.aiConnected = false;
+            updateAIConnectionStatus(false);
+        }
+
+        async function testAIConnection() {
+            const apiKey = document.getElementById('aiApiKey').value.trim();
+            if (!apiKey) {
+                showToast('Ingresa una API Key', 'error');
+                return;
+            }
+
+            state.aiApiKey = apiKey;
+            localStorage.setItem(`aiKey_${state.aiProvider}`, apiKey);
+
+            document.getElementById('aiStatusIcon').textContent = '⏳';
+            document.getElementById('aiStatusText').textContent = 'Probando conexion...';
+
+            try {
+                const response = await callAI('Responde solo con "OK" si funcionas correctamente.');
+
+                if (response) {
+                    state.aiConnected = true;
+                    updateAIConnectionStatus(true);
+                    document.getElementById('aiStatusIcon').textContent = '✅';
+                    document.getElementById('aiStatusText').textContent = 'IA conectada y lista!';
+                    showToast(`${CONFIG.aiProviders[state.aiProvider].name} conectado!`, 'ai');
+                    addAIMessage('system', `Conectado a ${CONFIG.aiProviders[state.aiProvider].name} (${CONFIG.aiProviders[state.aiProvider].model})`);
+                }
+            } catch (error) {
+                state.aiConnected = false;
+                updateAIConnectionStatus(false);
+                document.getElementById('aiStatusIcon').textContent = '❌';
+                document.getElementById('aiStatusText').textContent = 'Error: ' + error.message;
+                showToast('Error conectando: ' + error.message, 'error');
+            }
+        }
+
+        async function callAI(prompt) {
+            const provider = CONFIG.aiProviders[state.aiProvider];
+
+            let headers = { 'Content-Type': 'application/json' };
+            let body;
+
+            if (state.aiProvider === 'claude') {
+                headers['x-api-key'] = state.aiApiKey;
+                headers['anthropic-version'] = '2023-06-01';
+                headers['anthropic-dangerous-direct-browser-access'] = 'true';
+                body = JSON.stringify({
+                    model: provider.model,
+                    max_tokens: 500,
+                    messages: [{ role: 'user', content: prompt }]
+                });
+            } else {
+                headers['Authorization'] = `Bearer ${state.aiApiKey}`;
+                body = JSON.stringify({
+                    model: provider.model,
+                    messages: [{ role: 'user', content: prompt }],
+                    max_tokens: 500,
+                    temperature: 0.3
+                });
+            }
+
+            const response = await fetch(provider.url, { method: 'POST', headers, body });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error?.message || 'API Error');
+            }
+
+            const data = await response.json();
+            state.aiCalls++;
+            document.getElementById('aiCalls').textContent = state.aiCalls;
+
+            if (state.aiProvider === 'claude') {
+                return data.content[0].text;
+            } else {
+                return data.choices[0].message.content;
+            }
+        }
+
+        function updateAIConnectionStatus(connected) {
+            const dot = document.getElementById('aiConnStatus');
+            const text = document.getElementById('aiConnStatusText');
+            if (connected) {
+                dot.className = 'status-dot green';
+                text.textContent = 'IA ✓';
+            } else {
+                dot.className = 'status-dot red';
+                text.textContent = 'IA ✗';
+            }
+        }
+
+        // =====================================================
+        // AI TRADING LOGIC
+        // =====================================================
+
+        async function askAIForDecision(opportunities) {
+            if (!state.aiConnected || opportunities.length === 0) return [];
+
+            const topOpps = opportunities.slice(0, 5); // Solo analizar las mejores 5
+
+            const prompt = `Eres un trader experto de criptomonedas. Analiza estas oportunidades y decide cuales ejecutar.
+
+REGLAS:
+- Solo recomienda trades con alta probabilidad de exito
+- Prioriza micro-ganancias seguras sobre grandes riesgos
+- Responde SOLO en formato JSON
+
+OPORTUNIDADES:
+${topOpps.map((o, i) => `
+${i+1}. ${o.symbol}
+   - Precio: $${o.price}
+   - Cambio 24h: ${o.change24h.toFixed(2)}%
+   - RSI: ${o.indicators.rsi}
+   - MACD: ${o.indicators.macd}
+   - Senal: ${o.action}
+   - Score: ${o.score}/100
+   - Confluencia: ${o.confluence.long} LONG / ${o.confluence.short} SHORT
+   - Volatilidad: ${o.volatility.toFixed(2)}%
+`).join('')}
+
+Responde EXACTAMENTE en este formato JSON:
+{
+  "decisions": [
+    {
+      "symbol": "BTC/USDT",
+      "action": "LONG" o "SHORT" o "SKIP",
+      "confidence": 0-100,
+      "reasoning": "explicacion breve",
+      "suggestedSL": 1.5,
+      "suggestedTP": 3.0
+    }
+  ],
+  "marketAnalysis": "breve analisis del mercado"
+}`;
+
+            document.getElementById('aiThinking').classList.add('active');
+
+            try {
+                const response = await callAI(prompt);
+                document.getElementById('aiThinking').classList.remove('active');
+
+                // Parse JSON from response
+                const jsonMatch = response.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const parsed = JSON.parse(jsonMatch[0]);
+                    addAIMessage('ai', parsed.marketAnalysis || 'Analisis completado');
+                    return parsed.decisions || [];
+                }
+            } catch (error) {
+                console.error('AI Decision error:', error);
+                document.getElementById('aiThinking').classList.remove('active');
+                addAIMessage('system', 'Error al consultar IA: ' + error.message);
+            }
+
+            return [];
+        }
+
+        // =====================================================
+        // MARKET DATA & INDICATORS
+        // =====================================================
+
+        async function fetchBinanceData() {
+            try {
+                const symbols = CONFIG.cryptos.map(c => c.symbol);
+                const promises = symbols.map(s =>
+                    fetch(`${CONFIG.binanceAPI}/ticker/24hr?symbol=${s}`).then(r => r.json())
+                );
+                const tickers = await Promise.all(promises);
+
+                const data = [];
+                tickers.forEach((t, i) => {
+                    if (t && t.lastPrice) {
+                        data.push({
+                            id: CONFIG.cryptos[i].id,
+                            symbol: CONFIG.cryptos[i].display,
+                            price: parseFloat(t.lastPrice),
+                            high24h: parseFloat(t.highPrice),
+                            low24h: parseFloat(t.lowPrice),
+                            change24h: parseFloat(t.priceChangePercent),
+                            volume: parseFloat(t.volume)
+                        });
+                    }
+                });
+
+                document.getElementById('apiStatus').className = 'status-dot green';
+                document.getElementById('apiStatusText').textContent = 'Binance ✓';
+                return data;
+            } catch (e) {
+                document.getElementById('apiStatus').className = 'status-dot red';
+                document.getElementById('apiStatusText').textContent = 'API ✗';
+                return [];
+            }
+        }
+
+        async function fetchHistoricalData(symbol) {
+            try {
+                const binanceSymbol = CONFIG.cryptos.find(c => c.display === symbol)?.symbol;
+                if (!binanceSymbol) return null;
+
+                const r = await fetch(`${CONFIG.binanceAPI}/klines?symbol=${binanceSymbol}&interval=1h&limit=100`);
+                const klines = await r.json();
+
+                return {
+                    closes: klines.map(k => parseFloat(k[4])),
+                    highs: klines.map(k => parseFloat(k[2])),
+                    lows: klines.map(k => parseFloat(k[3])),
+                    volumes: klines.map(k => parseFloat(k[5]))
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Technical Indicators
+        function calculateRSI(closes, period = 14) {
+            if (closes.length < period + 1) return 50;
+            let gains = 0, losses = 0;
+            for (let i = closes.length - period; i < closes.length; i++) {
+                const change = closes[i] - closes[i - 1];
+                if (change > 0) gains += change;
+                else losses -= change;
+            }
+            if (losses === 0) return 100;
+            return 100 - (100 / (1 + (gains / period) / (losses / period)));
+        }
+
+        function calculateEMA(closes, period) {
+            if (closes.length < period) return closes[closes.length - 1];
+            const mult = 2 / (period + 1);
+            let ema = closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
+            for (let i = period; i < closes.length; i++) {
+                ema = (closes[i] - ema) * mult + ema;
+            }
+            return ema;
+        }
+
+        function calculateMACD(closes) {
+            const ema12 = calculateEMA(closes, 12);
+            const ema26 = calculateEMA(closes, 26);
+            return { trend: ema12 > ema26 ? 'bullish' : 'bearish' };
+        }
+
+        function calculateBB(closes, period = 20) {
+            if (closes.length < period) return { position: 50 };
+            const slice = closes.slice(-period);
+            const sma = slice.reduce((a, b) => a + b, 0) / period;
+            const std = Math.sqrt(slice.reduce((s, c) => s + Math.pow(c - sma, 2), 0) / period);
+            const upper = sma + 2 * std;
+            const lower = sma - 2 * std;
+            return { position: upper !== lower ? ((closes[closes.length - 1] - lower) / (upper - lower)) * 100 : 50 };
+        }
+
+        function calculateStochastic(closes, highs, lows, period = 14) {
+            if (closes.length < period) return 50;
+            const hh = Math.max(...highs.slice(-period));
+            const ll = Math.min(...lows.slice(-period));
+            if (hh === ll) return 50;
+            return ((closes[closes.length - 1] - ll) / (hh - ll)) * 100;
+        }
+
+        function analyzeAsset(data, historical) {
+            const { price, high24h, low24h, change24h } = data;
+            const volatility = ((high24h - low24h) / low24h) * 100;
+
+            let indicators = { rsi: 50, stoch: 50, macd: 'neutral', bb: 50 };
+
+            if (historical && historical.closes.length > 50) {
+                const { closes, highs, lows } = historical;
+                indicators.rsi = calculateRSI(closes);
+                indicators.stoch = calculateStochastic(closes, highs, lows);
+                indicators.macd = calculateMACD(closes).trend;
+                indicators.bb = calculateBB(closes).position;
+            }
+
+            let score = 0, longSignals = 0, shortSignals = 0;
+
+            if (indicators.rsi < 30) { score += 15; longSignals++; }
+            else if (indicators.rsi > 70) { score += 15; shortSignals++; }
+            else score += 5;
+
+            if (indicators.stoch < 20) { score += 12; longSignals++; }
+            else if (indicators.stoch > 80) { score += 12; shortSignals++; }
+            else score += 4;
+
+            if (indicators.macd === 'bullish') { score += 12; longSignals++; }
+            else if (indicators.macd === 'bearish') { score += 12; shortSignals++; }
+            else score += 4;
+
+            if (indicators.bb < 10) { score += 15; longSignals++; }
+            else if (indicators.bb > 90) { score += 15; shortSignals++; }
+            else score += 5;
+
+            if (historical && historical.closes.length > 21) {
+                const ema9 = calculateEMA(historical.closes, 9);
+                const ema21 = calculateEMA(historical.closes, 21);
+                if (ema9 > ema21) { score += 10; longSignals++; }
+                else { score += 10; shortSignals++; }
+            }
+
+            let action = 'OBSERVAR';
+            if (longSignals > shortSignals && longSignals >= 3) action = 'LONG';
+            else if (shortSignals > longSignals && shortSignals >= 3) action = 'SHORT';
+
+            return {
+                symbol: data.symbol,
+                price, high24h, low24h, change24h, volatility,
+                score: Math.min(100, score),
+                action,
+                indicators: { rsi: Math.round(indicators.rsi), stoch: Math.round(indicators.stoch), macd: indicators.macd, bb: Math.round(indicators.bb) },
+                confluence: { long: longSignals, short: shortSignals }
+            };
+        }
+
+        // =====================================================
+        // TRADE MANAGEMENT
+        // =====================================================
+
+        function openTrade(analysis, aiDecision) {
+            const profile = RISK_PROFILES[document.getElementById('riskProfile').value];
+            const tradePercent = parseFloat(document.getElementById('tradePercent').value);
+            const maxTrades = parseInt(document.getElementById('maxTrades').value);
+
+            if (state.activeTrades.length >= maxTrades) return;
+            if (state.activeTrades.find(t => t.symbol === analysis.symbol)) return;
+
+            const posSize = state.currentBalance * (tradePercent / 100);
+            const entry = analysis.price;
+
+            const sl = aiDecision.suggestedSL || profile.stopLoss;
+            const tp = aiDecision.suggestedTP || profile.takeProfit;
+
+            let stopLoss, takeProfit;
+            if (aiDecision.action === 'LONG') {
+                stopLoss = entry * (1 - sl / 100);
+                takeProfit = entry * (1 + tp / 100);
+            } else {
+                stopLoss = entry * (1 + sl / 100);
+                takeProfit = entry * (1 - tp / 100);
+            }
+
+            const trade = {
+                id: Date.now(),
+                symbol: analysis.symbol,
+                action: aiDecision.action,
+                entry,
+                currentPrice: entry,
+                stopLoss,
+                takeProfit,
+                posSize,
+                openTime: new Date().toISOString(),
+                aiReasoning: aiDecision.reasoning,
+                aiConfidence: aiDecision.confidence,
+                aiProvider: state.aiProvider,
+                userName: state.userName
+            };
+
+            state.activeTrades.push(trade);
+            showToast(`🤖 Trade abierto: ${trade.action} ${trade.symbol}`, 'ai');
+            addAIMessage('ai', `Abriendo ${trade.action} en ${trade.symbol}: ${aiDecision.reasoning}`);
+            saveToLocal();
+            renderAll();
+        }
+
+        function closeTrade(id, reason = 'manual') {
+            const idx = state.activeTrades.findIndex(t => t.id === id);
+            if (idx === -1) return;
+
+            const trade = state.activeTrades[idx];
+            const pnl = calcPnL(trade);
+
+            state.currentBalance += pnl.value;
+
+            state.tradeHistory.unshift({
+                ...trade,
+                closeTime: new Date().toISOString(),
+                closePrice: trade.currentPrice,
+                pnl: pnl.value,
+                pnlPercent: pnl.percent,
+                reason
+            });
+
+            state.activeTrades.splice(idx, 1);
+
+            const emoji = reason === 'take_profit' ? '🎯' : reason === 'stop_loss' ? '🛑' : '✋';
+            showToast(`${emoji} ${trade.symbol}: ${pnl.value >= 0 ? '+' : ''}$${pnl.value.toFixed(2)}`, pnl.value >= 0 ? 'success' : 'error');
+
+            saveToLocal();
+            renderAll();
+        }
+
+        function calcPnL(trade) {
+            const diff = trade.action === 'LONG' ?
+                trade.currentPrice - trade.entry :
+                trade.entry - trade.currentPrice;
+            const units = trade.posSize / trade.entry;
+            return { value: diff * units, percent: (diff / trade.entry) * 100 };
+        }
+
+        function updatePrices(priceMap) {
+            state.activeTrades.forEach(t => {
+                const p = priceMap[t.symbol];
+                if (p) {
+                    t.currentPrice = p;
+                    if (t.action === 'LONG') {
+                        if (p <= t.stopLoss) closeTrade(t.id, 'stop_loss');
+                        else if (p >= t.takeProfit) closeTrade(t.id, 'take_profit');
+                    } else {
+                        if (p >= t.stopLoss) closeTrade(t.id, 'stop_loss');
+                        else if (p <= t.takeProfit) closeTrade(t.id, 'take_profit');
+                    }
+                }
+            });
+        }
+
+        // =====================================================
+        // MAIN CYCLE
+        // =====================================================
+
+        async function runCycle() {
+            try {
+                const marketData = await fetchBinanceData();
+                if (!marketData.length) return;
+
+                const priceMap = {};
+                marketData.forEach(m => priceMap[m.symbol] = m.price);
+                updatePrices(priceMap);
+
+                const opportunities = [];
+
+                for (const data of marketData) {
+                    let hist = state.historicalData[data.symbol];
+                    if (!hist) {
+                        hist = await fetchHistoricalData(data.symbol);
+                        if (hist) state.historicalData[data.symbol] = hist;
+                    }
+
+                    const analysis = analyzeAsset(data, hist);
+                    if (analysis.score >= 30) {
+                        opportunities.push(analysis);
+                    }
+                }
+
+                opportunities.sort((a, b) => b.score - a.score);
+                state.opportunities = opportunities;
+
+                // Consultar a la IA si hay oportunidades buenas
+                if (state.aiConnected && opportunities.length > 0) {
+                    const aiDecisions = await askAIForDecision(opportunities);
+
+                    for (const decision of aiDecisions) {
+                        const minConfidence = parseInt(document.getElementById('minConfidence').value) || 50;
+                        if (decision.action !== 'SKIP' && decision.confidence >= minConfidence) {
+                            const opp = opportunities.find(o => o.symbol === decision.symbol);
+                            if (opp) {
+                                openTrade(opp, decision);
+                            }
+                        }
+                    }
+                }
+
+                saveToLocal();
+                renderAll();
+
+            } catch (e) {
+                console.error('Cycle error:', e);
+            }
+        }
+
+        function toggleAI() {
+            if (!state.aiConnected) {
+                showToast('Primero conecta una IA', 'error');
+                return;
+            }
+
+            if (state.isRunning) {
+                state.isRunning = false;
+                clearInterval(state.monitorInterval);
+                document.getElementById('btnStart').innerHTML = '🚀 Iniciar IA';
+                document.getElementById('btnStart').className = 'btn btn-ai';
+                addAIMessage('system', 'Trading detenido');
+            } else {
+                state.isRunning = true;
+                document.getElementById('btnStart').innerHTML = '⏹️ Detener';
+                document.getElementById('btnStart').className = 'btn btn-danger';
+                addAIMessage('system', 'Trading iniciado - Analizando mercado...');
+                showToast('🤖 IA iniciada', 'ai');
+                runCycle();
+                state.monitorInterval = setInterval(runCycle, CONFIG.updateInterval);
+            }
+        }
+
+        // =====================================================
+        // UI & RENDERING
+        // =====================================================
+
+        function addAIMessage(type, text) {
+            const chat = document.getElementById('aiChat');
+            const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const msg = document.createElement('div');
+            msg.className = `ai-message ${type}`;
+            msg.innerHTML = `<div>${text}</div><div class="timestamp">${time}</div>`;
+            chat.insertBefore(msg, chat.firstChild);
+
+            while (chat.children.length > 20) {
+                chat.removeChild(chat.lastChild);
+            }
+        }
+
+        function renderAll() {
+            renderTrades();
+            renderOpportunities();
+            renderHistory();
+            updateStats();
+            updateBalance();
+        }
+
+        function renderTrades() {
+            const container = document.getElementById('tradesContainer');
+            document.getElementById('tradesCountBadge').textContent = state.activeTrades.length;
+
+            if (!state.activeTrades.length) {
+                container.innerHTML = `
+                    <div class="empty-trades">
+                        <div class="icon">🤖</div>
+                        <div class="title">IA Real lista para operar</div>
+                        <div class="desc">Configura tu API Key e inicia la IA</div>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = state.activeTrades.map(t => {
+                const pnl = calcPnL(t);
+                const elapsed = Date.now() - new Date(t.openTime).getTime();
+                const elapsedStr = elapsed < 3600000 ? `${Math.floor(elapsed / 60000)}m` : `${Math.floor(elapsed / 3600000)}h`;
+
+                return `
+                    <div class="trade-card ${t.action.toLowerCase()}">
+                        <div class="trade-header">
+                            <div class="trade-symbol">
+                                ${t.symbol}
+                                <span class="trade-type ${t.action.toLowerCase()}">${t.action}</span>
+                                <span class="ai-tag">🤖 ${t.aiProvider?.toUpperCase() || 'AI'}</span>
+                            </div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary)">${elapsedStr}</div>
+                        </div>
+
+                        <div class="trade-prices">
+                            <div class="trade-price-item">
+                                <div class="label">Entrada</div>
+                                <div class="value">$${t.entry.toFixed(4)}</div>
+                            </div>
+                            <div class="trade-price-item">
+                                <div class="label">Actual</div>
+                                <div class="value">$${t.currentPrice.toFixed(4)}</div>
+                            </div>
+                            <div class="trade-price-item">
+                                <div class="label">SL</div>
+                                <div class="value" style="color: var(--red-light)">$${t.stopLoss.toFixed(4)}</div>
+                            </div>
+                            <div class="trade-price-item">
+                                <div class="label">TP</div>
+                                <div class="value" style="color: var(--green-light)">$${t.takeProfit.toFixed(4)}</div>
+                            </div>
+                        </div>
+
+                        <div class="pnl-display">
+                            <span class="pnl-value ${pnl.value >= 0 ? 'positive' : 'negative'}">
+                                ${pnl.value >= 0 ? '+' : ''}$${pnl.value.toFixed(2)} (${pnl.percent.toFixed(2)}%)
+                            </span>
+                            <span style="color: var(--text-secondary); font-size: 0.8rem">Confianza: ${t.aiConfidence || 0}%</span>
+                        </div>
+
+                        <div class="ai-response-box">
+                            <div class="ai-response-title">🧠 Razonamiento IA</div>
+                            <div class="ai-response-text">${t.aiReasoning || 'Trade automatico'}</div>
+                            <div class="ai-model-tag">via ${CONFIG.aiProviders[t.aiProvider]?.name || 'AI'}</div>
+                        </div>
+
+                        <button class="btn-close-trade" onclick="closeTrade(${t.id})">❌ Cerrar</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderOpportunities() {
+            const container = document.getElementById('oppsContainer');
+            document.getElementById('oppsCountBadge').textContent = state.opportunities.length;
+
+            if (!state.opportunities.length) {
+                container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-secondary);">Esperando analisis...</div>';
+                return;
+            }
+
+            container.innerHTML = state.opportunities.slice(0, 8).map(o => `
+                <div class="opp-card ${o.action.toLowerCase()}">
+                    <div class="opp-header">
+                        <span class="opp-symbol">${o.symbol}</span>
+                        <span class="opp-action ${o.action.toLowerCase()}">${o.action}</span>
+                    </div>
+                    <div class="opp-details">
+                        <span>$${o.price.toFixed(4)}</span>
+                        <span style="color: ${o.change24h >= 0 ? 'var(--green-light)' : 'var(--red-light)'}">
+                            ${o.change24h >= 0 ? '+' : ''}${o.change24h.toFixed(2)}%
+                        </span>
+                        <span>Score: ${o.score}</span>
+                    </div>
+                    <div class="opp-ai-status">
+                        RSI: ${o.indicators.rsi} | ${o.confluence.long}L/${o.confluence.short}S
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('historyContainer');
+            if (!state.tradeHistory.length) {
+                container.innerHTML = '<div style="padding: 15px; text-align: center; color: var(--text-secondary);">Sin historial</div>';
+                return;
+            }
+
+            container.innerHTML = state.tradeHistory.slice(0, 10).map(t => `
+                <div class="history-item">
+                    <span>${t.symbol} <span style="color: ${t.action === 'LONG' ? 'var(--green-light)' : 'var(--red-light)'}">${t.action}</span></span>
+                    <span class="history-result ${t.pnl >= 0 ? 'win' : 'loss'}">
+                        ${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const total = state.tradeHistory.length;
+            const wins = state.tradeHistory.filter(t => t.pnl > 0).length;
+            const profit = state.tradeHistory.reduce((s, t) => s + t.pnl, 0);
+
+            document.getElementById('totalTrades').textContent = total;
+            document.getElementById('winRate').textContent = total > 0 ? `${Math.round(wins / total * 100)}%` : '0%';
+            document.getElementById('totalProfit').textContent = `$${profit.toFixed(0)}`;
+            document.getElementById('totalProfit').className = `value ${profit >= 0 ? 'positive' : 'negative'}`;
+        }
+
+        function updateBalance() {
+            const change = state.currentBalance - state.initialBalance;
+            const pct = (change / state.initialBalance * 100).toFixed(2);
+
+            document.getElementById('currentBalance').textContent = `$${state.currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('balanceChange').textContent = `${change >= 0 ? '+' : ''}$${change.toFixed(2)} (${pct}%)`;
+            document.getElementById('balanceChange').className = `change ${change >= 0 ? 'positive' : 'negative'}`;
+        }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // =====================================================
+        // PERSISTENCE
+        // =====================================================
+
+        function saveToLocal() {
+            const config = {
+                currentBalance: state.currentBalance,
+                initialBalance: state.initialBalance,
+                activeTrades: state.activeTrades,
+                tradeHistory: state.tradeHistory,
+                aiProvider: state.aiProvider,
+                aiCalls: state.aiCalls,
+                firebaseUrl: state.firebaseUrl,
+                userName: state.userName,
+                settings: {
+                    riskProfile: document.getElementById('riskProfile').value,
+                    initialBalance: document.getElementById('initialBalance').value,
+                    tradePercent: document.getElementById('tradePercent').value,
+                    maxTrades: document.getElementById('maxTrades').value,
+                    minConfidence: document.getElementById('minConfidence').value
+                }
+            };
+            localStorage.setItem('cryptoDashboardV7', JSON.stringify(config));
+        }
+
+        function loadConfig() {
+            const saved = localStorage.getItem('cryptoDashboardV7');
+            if (saved) {
+                const config = JSON.parse(saved);
+                state.currentBalance = config.currentBalance || 10000;
+                state.initialBalance = config.initialBalance || 10000;
+                state.activeTrades = config.activeTrades || [];
+                state.tradeHistory = config.tradeHistory || [];
+                state.aiProvider = config.aiProvider || 'groq';
+                state.aiCalls = config.aiCalls || 0;
+                state.firebaseUrl = config.firebaseUrl;
+                state.userName = config.userName || 'Usuario';
+
+                if (config.settings) {
+                    document.getElementById('riskProfile').value = config.settings.riskProfile || 'moderate';
+                    document.getElementById('initialBalance').value = config.settings.initialBalance || 10000;
+                    document.getElementById('tradePercent').value = config.settings.tradePercent || 2;
+                    document.getElementById('maxTrades').value = config.settings.maxTrades || 3;
+                    document.getElementById('maxTradesValue').textContent = config.settings.maxTrades || 3;
+                    document.getElementById('minConfidence').value = config.settings.minConfidence || 50;
+                    document.getElementById('minConfidenceValue').textContent = (config.settings.minConfidence || 50) + '%';
+                }
+
+                // Load AI provider selection
+                selectAI(state.aiProvider);
+            }
+
+            document.getElementById('aiCalls').textContent = state.aiCalls;
+        }
+
+        function resetSystem() {
+            if (!confirm('Resetear todo?')) return;
+            state.isRunning = false;
+            clearInterval(state.monitorInterval);
+            state.currentBalance = parseFloat(document.getElementById('initialBalance').value);
+            state.initialBalance = state.currentBalance;
+            state.activeTrades = [];
+            state.tradeHistory = [];
+            state.opportunities = [];
+            state.aiCalls = 0;
+            document.getElementById('aiCalls').textContent = 0;
+            document.getElementById('btnStart').innerHTML = '🚀 Iniciar IA';
+            document.getElementById('btnStart').className = 'btn btn-ai';
+            saveToLocal();
+            renderAll();
+            addAIMessage('system', 'Sistema reseteado');
+            showToast('Sistema reseteado', 'info');
+        }
+
+        function showConfigModal() {
+            document.getElementById('firebaseUrl').value = state.firebaseUrl || '';
+            document.getElementById('userName').value = state.userName || '';
+            document.getElementById('configModal').classList.add('active');
+        }
+
+        function saveFirebaseConfig() {
+            state.firebaseUrl = document.getElementById('firebaseUrl').value.trim();
+            state.userName = document.getElementById('userName').value.trim() || 'Usuario';
+            saveToLocal();
+            document.getElementById('configModal').classList.remove('active');
+            showToast('Configuracion guardada', 'success');
+        }
+
+        // Close modal on click outside
+        document.getElementById('configModal').addEventListener('click', (e) => {
+            if (e.target.id === 'configModal') {
+                document.getElementById('configModal').classList.remove('active');
+            }
+        });
+
+        // =====================================================
+        // INIT
+        // =====================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadConfig();
+            renderAll();
+            addAIMessage('system', 'Dashboard V7 cargado - Selecciona un proveedor de IA');
+        });
+    </script>
+</body>
+</html>
