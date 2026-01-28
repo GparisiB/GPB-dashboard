@@ -1,0 +1,3070 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Trading Dashboard V8 - AI Optimizado</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e14;
+            --bg-secondary: #131920;
+            --bg-tertiary: #1a2028;
+            --bg-card: #1e252e;
+            --border-color: #2a3441;
+            --text-primary: #e6edf3;
+            --text-secondary: #7d8590;
+            --green: #238636;
+            --green-light: #3fb950;
+            --green-glow: rgba(63, 185, 80, 0.3);
+            --red: #da3633;
+            --red-light: #f85149;
+            --red-glow: rgba(248, 81, 73, 0.3);
+            --blue: #58a6ff;
+            --yellow: #d29922;
+            --purple: #a371f7;
+            --purple-glow: rgba(163, 113, 247, 0.3);
+            --orange: #f0883e;
+            --cyan: #39c5cf;
+            --ai-gradient: linear-gradient(135deg, #f97316, #a371f7, #39c5cf);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        /* ========== AI RESPONSE BAR (NUEVO - ARRIBA) ========== */
+        .ai-response-bar {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.15), rgba(163, 113, 247, 0.15), rgba(57, 197, 207, 0.15));
+            border: 1px solid var(--purple);
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .ai-response-icon {
+            font-size: 2.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .ai-response-content {
+            flex: 1;
+        }
+
+        .ai-response-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 8px;
+        }
+
+        .ai-response-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            background: var(--ai-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .ai-response-model {
+            background: var(--bg-tertiary);
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            color: var(--cyan);
+        }
+
+        .ai-response-time {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .ai-response-text {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+            padding: 10px 15px;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            border-left: 3px solid var(--purple);
+        }
+
+        .ai-response-thinking {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--orange);
+        }
+
+        .ai-response-thinking .dots span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            margin: 0 2px;
+            background: var(--orange);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .ai-response-thinking .dots span:nth-child(1) { animation-delay: -0.32s; }
+        .ai-response-thinking .dots span:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        .ai-response-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .ai-stat {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .ai-stat .value {
+            font-weight: 600;
+            color: var(--cyan);
+        }
+
+        .ai-stat.warning .value { color: var(--yellow); }
+        .ai-stat.danger .value { color: var(--red-light); }
+        .ai-stat.success .value { color: var(--green-light); }
+
+        /* ========== PROTECTION INDICATORS ========== */
+        .protection-bar {
+            display: flex;
+            gap: 10px;
+            padding: 8px 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .protection-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 15px;
+            background: var(--bg-tertiary);
+        }
+
+        .protection-item.active {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--green-light);
+        }
+
+        .protection-item.inactive {
+            background: rgba(125, 133, 144, 0.2);
+            color: var(--text-secondary);
+        }
+
+        .protection-item.warning {
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--yellow);
+        }
+
+        /* ========== HEADER ========== */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 15px;
+        }
+
+        .header-left h1 {
+            font-size: 1.3rem;
+            background: var(--ai-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-left .subtitle {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .header-center {
+            display: flex;
+            gap: 10px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--bg-tertiary);
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.green { background: var(--green-light); box-shadow: 0 0 10px var(--green-glow); }
+        .status-dot.red { background: var(--red-light); }
+        .status-dot.yellow { background: var(--yellow); }
+        .status-dot.cyan { background: var(--cyan); }
+        .status-dot.orange { background: var(--orange); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .header-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .ai-provider-badge {
+            background: var(--ai-gradient);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* ========== MAIN LAYOUT ========== */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr 320px;
+            gap: 15px;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1400px) {
+            .main-layout { grid-template-columns: 1fr; }
+        }
+
+        .panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .panel-badge {
+            background: var(--bg-tertiary);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        /* ========== AI CONFIG (Compacto) ========== */
+        .ai-config-panel {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(163, 113, 247, 0.1));
+            border: 1px solid var(--orange);
+        }
+
+        .ai-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+
+        .ai-option {
+            padding: 8px 5px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .ai-option:hover { border-color: var(--purple); }
+        .ai-option.active {
+            border-color: var(--orange);
+            background: rgba(249, 115, 22, 0.2);
+        }
+
+        .ai-option .icon { font-size: 1.2rem; }
+        .ai-option .name { font-size: 0.75rem; font-weight: 600; }
+
+        .api-key-input {
+            margin-bottom: 10px;
+        }
+
+        .api-key-input label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .api-key-input input {
+            width: 100%;
+            padding: 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.8rem;
+        }
+
+        .api-key-input input:focus {
+            border-color: var(--orange);
+            outline: none;
+        }
+
+        /* ========== AI MODE SELECTOR ========== */
+        .ai-mode-section {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(248, 81, 73, 0.1));
+            border: 1px solid var(--orange);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .ai-mode-selector {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .ai-mode-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ai-mode-option:hover {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+        }
+
+        .ai-mode-option.active {
+            border-color: var(--orange);
+            background: rgba(249, 115, 22, 0.15);
+        }
+
+        .ai-mode-option.active[data-mode="aggressive"] {
+            border-color: var(--red-light);
+            background: rgba(248, 81, 73, 0.15);
+        }
+
+        .ai-mode-option.active[data-mode="conservative"] {
+            border-color: var(--green-light);
+            background: rgba(63, 185, 80, 0.15);
+        }
+
+        .ai-mode-option .mode-icon {
+            font-size: 1.3rem;
+        }
+
+        .ai-mode-option .mode-name {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+
+        .ai-mode-option .mode-desc {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-left: auto;
+        }
+
+        /* ========== STRATEGY SECTION (NUEVO) ========== */
+        .strategy-section {
+            background: linear-gradient(135deg, rgba(63, 185, 80, 0.1), rgba(57, 197, 207, 0.1));
+            border: 1px solid var(--green);
+            margin-top: 10px;
+        }
+
+        .strategy-toggles {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .strategy-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 8px;
+            background: var(--bg-tertiary);
+            border-radius: 6px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .strategy-toggle:hover {
+            background: var(--bg-card);
+        }
+
+        .strategy-toggle.active {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--green-light);
+        }
+
+        .strategy-toggle input {
+            display: none;
+        }
+
+        .toggle-indicator {
+            width: 32px;
+            height: 16px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .toggle-indicator::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s;
+        }
+
+        .strategy-toggle.active .toggle-indicator {
+            background: var(--green);
+        }
+
+        .strategy-toggle.active .toggle-indicator::after {
+            background: var(--green-light);
+            left: 18px;
+        }
+
+        /* ========== SLIDERS ========== */
+        .slider-field {
+            margin-bottom: 10px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+        }
+
+        .slider-header span:last-child {
+            color: var(--cyan);
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: var(--bg-tertiary);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: var(--cyan);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* ========== BUTTONS ========== */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .btn-ai {
+            background: var(--ai-gradient);
+            color: white;
+        }
+
+        .btn-ai:hover {
+            transform: scale(1.02);
+            box-shadow: 0 5px 20px rgba(249, 115, 22, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .btn-outline:hover {
+            border-color: var(--text-primary);
+            color: var(--text-primary);
+        }
+
+        /* ========== STATS GRID ========== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .stat-box {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .stat-box .value {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .stat-box .value.positive { color: var(--green-light); }
+        .stat-box .value.negative { color: var(--red-light); }
+        .stat-box .value.warning { color: #f0b90b; }
+
+        .stat-box .label {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        /* ========== BALANCE DISPLAY ========== */
+        .balance-hero {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--bg-tertiary), var(--bg-card));
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .balance-hero .amount {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .balance-hero .change {
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .balance-hero .change.positive { color: var(--green-light); }
+        .balance-hero .change.negative { color: var(--red-light); }
+
+        /* ========== TRADES CONTAINER ========== */
+        .trades-container {
+            max-height: calc(100vh - 350px);
+            min-height: 400px;
+            overflow-y: auto;
+        }
+
+        .trade-card {
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-left: 3px solid var(--blue);
+        }
+
+        .trade-card.long { border-left-color: var(--green-light); }
+        .trade-card.short { border-left-color: var(--red-light); }
+
+        .trade-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .trade-symbol {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .trade-action {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .trade-action.long {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--green-light);
+        }
+
+        .trade-action.short {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--red-light);
+        }
+
+        .trade-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .trade-pnl {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .pnl-value {
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .pnl-value.positive { color: var(--green-light); }
+        .pnl-value.negative { color: var(--red-light); }
+
+        /* Break-even indicator */
+        .trade-protection {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .protection-badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(57, 197, 207, 0.2);
+            color: var(--cyan);
+        }
+
+        .protection-badge.be-active {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--green-light);
+        }
+
+        .protection-badge.partial {
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--yellow);
+        }
+
+        .protection-badge.trailing {
+            background: rgba(249, 115, 22, 0.2);
+            color: #f97316;
+        }
+
+        .protection-badge.size {
+            background: rgba(139, 92, 246, 0.2);
+            color: #8b5cf6;
+        }
+
+        /* ========== OPPORTUNITIES ========== */
+        .opps-container {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .opp-card {
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s;
+        }
+
+        .opp-card:hover {
+            border-color: var(--purple);
+        }
+
+        .opp-card.filtered {
+            opacity: 0.5;
+            border-color: var(--red);
+        }
+
+        .opp-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .opp-symbol {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .opp-score {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .opp-score.high {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--green-light);
+        }
+
+        .opp-score.medium {
+            background: rgba(210, 153, 34, 0.2);
+            color: var(--yellow);
+        }
+
+        .opp-score.low {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--red-light);
+        }
+
+        .opp-indicators {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            font-size: 0.7rem;
+        }
+
+        .opp-indicator {
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--bg-card);
+        }
+
+        .opp-indicator.bullish { color: var(--green-light); }
+        .opp-indicator.bearish { color: var(--red-light); }
+
+        .opp-filter-reason {
+            font-size: 0.7rem;
+            color: var(--red-light);
+            margin-top: 5px;
+            padding: 4px 8px;
+            background: rgba(248, 81, 73, 0.1);
+            border-radius: 4px;
+        }
+
+        /* ========== HISTORY ========== */
+        .history-container {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.8rem;
+        }
+
+        .history-result {
+            font-weight: 600;
+        }
+
+        .history-result.win { color: var(--green-light); }
+        .history-result.loss { color: var(--red-light); }
+
+        /* ========== COOLDOWN OVERLAY ========== */
+        .cooldown-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .cooldown-overlay.active {
+            display: flex;
+        }
+
+        .cooldown-box {
+            background: var(--bg-secondary);
+            border: 2px solid var(--yellow);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .cooldown-box h3 {
+            color: var(--yellow);
+            margin-bottom: 15px;
+        }
+
+        .cooldown-timer {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--cyan);
+            margin: 20px 0;
+        }
+
+        /* ========== CONFIG MODAL ========== */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 25px;
+            width: 90%;
+            max-width: 450px;
+        }
+
+        .modal-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--cyan);
+        }
+
+        .modal .input-field {
+            margin-bottom: 15px;
+        }
+
+        .modal .input-field label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .modal .input-field input {
+            width: 100%;
+            padding: 10px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .modal .input-field input:focus {
+            border-color: var(--cyan);
+            outline: none;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons .btn {
+            flex: 1;
+        }
+
+        /* ========== TOAST ========== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .toast {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 20px;
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease;
+            max-width: 350px;
+        }
+
+        .toast.success { border-left: 3px solid var(--green-light); }
+        .toast.error { border-left: 3px solid var(--red-light); }
+        .toast.warning { border-left: 3px solid var(--yellow); }
+        .toast.info { border-left: 3px solid var(--cyan); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* ========== EMPTY STATE ========== */
+        .empty-trades {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-secondary);
+        }
+
+        .empty-trades .icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .empty-trades .title {
+            font-size: 1rem;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .empty-trades .desc {
+            font-size: 0.8rem;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: var(--bg-tertiary); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- CONFIG MODAL (Firebase) -->
+    <div class="modal" id="configModal">
+        <div class="modal-content">
+            <div class="modal-title">🔧 Configurar Firebase</div>
+            <div class="input-field">
+                <label>Firebase Database URL</label>
+                <input type="text" id="firebaseUrl" placeholder="https://tu-proyecto.firebaseio.com/">
+            </div>
+            <div class="input-field">
+                <label>Tu nombre (para identificar en Firebase)</label>
+                <input type="text" id="userName" placeholder="Ej: Gerardo">
+            </div>
+            <div class="input-field">
+                <label>Balance Inicial ($)</label>
+                <input type="number" id="initialBalanceInput" value="10000" min="100">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-outline" onclick="closeConfigModal()">Cancelar</button>
+                <button class="btn btn-ai" onclick="saveFirebaseConfig()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- COOLDOWN OVERLAY -->
+    <div class="cooldown-overlay" id="cooldownOverlay">
+        <div class="cooldown-box">
+            <h3>COOLDOWN ACTIVO</h3>
+            <p>Despues de una perdida, el bot espera para evitar trading emocional</p>
+            <div class="cooldown-timer" id="cooldownTimer">5:00</div>
+            <p style="color: var(--text-secondary); font-size: 0.85rem;">El trading continuara automaticamente</p>
+        </div>
+    </div>
+
+    <!-- AI RESPONSE BAR (NUEVO - ARRIBA) -->
+    <div class="ai-response-bar">
+        <div class="ai-response-icon">🤖</div>
+        <div class="ai-response-content">
+            <div class="ai-response-header">
+                <span class="ai-response-title">Respuesta de la IA</span>
+                <span class="ai-response-model" id="aiModelBadge">Groq - Llama 8B</span>
+                <span class="ai-response-time" id="aiResponseTime">--:--:--</span>
+            </div>
+            <div class="ai-response-text" id="aiResponseText">
+                <div class="ai-response-thinking" id="aiThinkingBar" style="display: none;">
+                    <span>Analizando mercado</span>
+                    <div class="dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                </div>
+                <span id="aiMainResponse">Esperando conexion con la IA...</span>
+            </div>
+            <div class="ai-response-stats">
+                <div class="ai-stat">
+                    <span>Confianza:</span>
+                    <span class="value" id="aiConfidence">--%</span>
+                </div>
+                <div class="ai-stat" id="aiTrendStat">
+                    <span>Tendencia BTC:</span>
+                    <span class="value" id="aiBTCTrend">--</span>
+                </div>
+                <div class="ai-stat">
+                    <span>Consultas:</span>
+                    <span class="value" id="aiCallsTop">0</span>
+                </div>
+                <div class="ai-stat" id="cooldownStat" style="display: none;">
+                    <span>Cooldown:</span>
+                    <span class="value">Activo</span>
+                </div>
+            </div>
+            <!-- Protection indicators -->
+            <div class="protection-bar">
+                <div class="protection-item" id="protBreakeven">
+                    <span>Break-Even</span>
+                </div>
+                <div class="protection-item" id="protPartialTP">
+                    <span>Partial TP</span>
+                </div>
+                <div class="protection-item" id="protTrendFilter">
+                    <span>Filtro Tendencia</span>
+                </div>
+                <div class="protection-item" id="protVolumeFilter">
+                    <span>Filtro Volumen</span>
+                </div>
+                <div class="protection-item" id="protCooldown">
+                    <span>Cooldown</span>
+                </div>
+                <div class="protection-item" id="protHorarios">
+                    <span>Horarios</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="header-left">
+            <h1>CRYPTO TRADING V8</h1>
+            <div class="subtitle">AI Optimizado + Protecciones Avanzadas</div>
+        </div>
+        <div class="header-center">
+            <div class="status-badge">
+                <span class="status-dot red" id="apiStatus"></span>
+                <span id="apiStatusText">API</span>
+            </div>
+            <div class="status-badge">
+                <span class="status-dot red" id="aiConnStatus"></span>
+                <span id="aiConnStatusText">IA</span>
+            </div>
+            <div class="status-badge">
+                <span class="status-dot yellow" id="botStatus"></span>
+                <span id="botStatusText">Bot: OFF</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="ai-provider-badge" id="providerBadge">Sin IA</div>
+            <button class="btn btn-outline" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.85rem;" onclick="showConfigModal()">⚙️ Firebase</button>
+        </div>
+    </div>
+
+    <!-- MAIN LAYOUT -->
+    <div class="main-layout">
+        <!-- LEFT PANEL: Config -->
+        <div class="panel ai-config-panel">
+            <div class="panel-header">
+                <div class="panel-title">⚙️ Configuracion IA</div>
+            </div>
+
+            <div class="ai-selector">
+                <div class="ai-option active" data-provider="groq" onclick="selectAI('groq')">
+                    <span class="icon">⚡</span>
+                    <span class="name">Groq</span>
+                </div>
+                <div class="ai-option" data-provider="claude" onclick="selectAI('claude')">
+                    <span class="icon">🧠</span>
+                    <span class="name">Claude</span>
+                </div>
+                <div class="ai-option" data-provider="openai" onclick="selectAI('openai')">
+                    <span class="icon">🤖</span>
+                    <span class="name">GPT-4</span>
+                </div>
+            </div>
+
+            <div class="api-key-input">
+                <label>API Key</label>
+                <input type="password" id="apiKeyInput" placeholder="Ingresa tu API Key...">
+            </div>
+
+            <button class="btn btn-ai" id="btnStart" onclick="toggleAI()">🚀 Iniciar IA</button>
+            <button class="btn btn-outline" onclick="resetSystem()">🗑️ Reset</button>
+
+            <!-- AI Mode Selector -->
+            <div class="ai-mode-section">
+                <div class="panel-header">
+                    <div class="panel-title">🎯 Modo de IA</div>
+                </div>
+                <div class="ai-mode-selector">
+                    <div class="ai-mode-option" data-mode="conservative" onclick="setAIMode('conservative')">
+                        <span class="mode-icon">🛡️</span>
+                        <span class="mode-name">Conservadora</span>
+                        <span class="mode-desc">Pocos trades, alta precision</span>
+                    </div>
+                    <div class="ai-mode-option active" data-mode="normal" onclick="setAIMode('normal')">
+                        <span class="mode-icon">⚖️</span>
+                        <span class="mode-name">Normal</span>
+                        <span class="mode-desc">Balance riesgo/ganancia</span>
+                    </div>
+                    <div class="ai-mode-option" data-mode="aggressive" onclick="setAIMode('aggressive')">
+                        <span class="mode-icon">🔥</span>
+                        <span class="mode-name">Agresiva</span>
+                        <span class="mode-desc">Mas trades, mas riesgo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strategy Section -->
+            <div class="panel strategy-section">
+                <div class="panel-header">
+                    <div class="panel-title">🛡️ Protecciones V8</div>
+                </div>
+                <div class="strategy-toggles">
+                    <label class="strategy-toggle active" id="toggleBreakeven">
+                        <input type="checkbox" checked onchange="toggleProtection('breakeven')">
+                        <div class="toggle-indicator"></div>
+                        <span>Break-Even</span>
+                    </label>
+                    <label class="strategy-toggle active" id="togglePartialTP">
+                        <input type="checkbox" checked onchange="toggleProtection('partialTP')">
+                        <div class="toggle-indicator"></div>
+                        <span>Partial TP</span>
+                    </label>
+                    <label class="strategy-toggle active" id="toggleTrendFilter">
+                        <input type="checkbox" checked onchange="toggleProtection('trendFilter')">
+                        <div class="toggle-indicator"></div>
+                        <span>Filtro Tendencia</span>
+                    </label>
+                    <label class="strategy-toggle active" id="toggleVolumeFilter">
+                        <input type="checkbox" checked onchange="toggleProtection('volumeFilter')">
+                        <div class="toggle-indicator"></div>
+                        <span>Filtro Volumen</span>
+                    </label>
+                    <label class="strategy-toggle active" id="toggleCooldown">
+                        <input type="checkbox" checked onchange="toggleProtection('cooldown')">
+                        <div class="toggle-indicator"></div>
+                        <span>Cooldown</span>
+                    </label>
+                    <label class="strategy-toggle active" id="toggleHorarios">
+                        <input type="checkbox" checked onchange="toggleProtection('horarios')">
+                        <div class="toggle-indicator"></div>
+                        <span>Horarios</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Sliders -->
+            <div class="slider-field">
+                <div class="slider-header">
+                    <span>Confianza Min IA</span>
+                    <span id="minConfidenceValue">50%</span>
+                </div>
+                <input type="range" id="minConfidence" min="30" max="90" value="50" oninput="updateSlider('minConfidence')">
+            </div>
+
+            <div class="slider-field">
+                <div class="slider-header">
+                    <span>% Por Trade</span>
+                    <span id="tradePercentValue">2%</span>
+                </div>
+                <input type="range" id="tradePercent" min="1" max="10" value="2" oninput="updateSlider('tradePercent')">
+            </div>
+
+            <div class="slider-field">
+                <div class="slider-header">
+                    <span>Cooldown (min)</span>
+                    <span id="cooldownMinValue">5</span>
+                </div>
+                <input type="range" id="cooldownMin" min="1" max="15" value="5" oninput="updateSlider('cooldownMin')">
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="value" id="totalTrades">0</div>
+                    <div class="label">Trades</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="winRate">0%</div>
+                    <div class="label">Win Rate</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value positive" id="totalProfit">$0</div>
+                    <div class="label">Profit</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value warning" id="investedAmount">$0</div>
+                    <div class="label">Invertido</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="tradesBlocked">0</div>
+                    <div class="label">Bloqueados</div>
+                </div>
+                <div class="stat-box">
+                    <div class="value" id="aiCalls">0</div>
+                    <div class="label">IA Calls</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER: Active Trades -->
+        <div class="panel main-panel">
+            <div class="panel-header">
+                <div class="panel-title">🎯 TRADES ACTIVOS</div>
+                <div class="panel-badge" id="tradesCountBadge">0</div>
+            </div>
+
+            <div class="balance-hero">
+                <div class="amount" id="currentBalance">$10,000.00</div>
+                <div class="change" id="balanceChange">+$0.00 (0.00%)</div>
+            </div>
+
+            <div class="trades-container" id="tradesContainer">
+                <div class="empty-trades">
+                    <div class="icon">🛡️</div>
+                    <div class="title">V8 con Protecciones Avanzadas</div>
+                    <div class="desc">Break-Even, Partial TP, Filtros de Tendencia y Volumen</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Opportunities & History -->
+        <div class="panel analysis-panel">
+            <div class="panel-header">
+                <div class="panel-title">📊 Oportunidades</div>
+                <div class="panel-badge" id="oppsCountBadge">0</div>
+            </div>
+
+            <div class="opps-container" id="oppsContainer">
+                <div style="padding: 15px; text-align: center; color: var(--text-secondary);">
+                    Esperando analisis...
+                </div>
+            </div>
+
+            <div class="panel-header" style="margin-top: 12px;">
+                <div class="panel-title">📜 Historial</div>
+            </div>
+            <div class="history-container" id="historyContainer">
+                <div style="padding: 15px; text-align: center; color: var(--text-secondary);">Sin historial</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =====================================================
+        // CONFIGURACION V8 - OPTIMIZADO + PROTECCIONES
+        // =====================================================
+
+        const CONFIG = {
+            cryptos: [
+                { id: 'bitcoin', symbol: 'BTCUSDT', display: 'BTC/USDT' },
+                { id: 'ethereum', symbol: 'ETHUSDT', display: 'ETH/USDT' },
+                { id: 'solana', symbol: 'SOLUSDT', display: 'SOL/USDT' },
+                { id: 'binancecoin', symbol: 'BNBUSDT', display: 'BNB/USDT' },
+                { id: 'ripple', symbol: 'XRPUSDT', display: 'XRP/USDT' },
+                { id: 'cardano', symbol: 'ADAUSDT', display: 'ADA/USDT' },
+                { id: 'avalanche-2', symbol: 'AVAXUSDT', display: 'AVAX/USDT' },
+                { id: 'polkadot', symbol: 'DOTUSDT', display: 'DOT/USDT' },
+                { id: 'chainlink', symbol: 'LINKUSDT', display: 'LINK/USDT' },
+                { id: 'matic-network', symbol: 'MATICUSDT', display: 'MATIC/USDT' },
+                { id: 'cosmos', symbol: 'ATOMUSDT', display: 'ATOM/USDT' },
+                { id: 'uniswap', symbol: 'UNIUSDT', display: 'UNI/USDT' },
+                { id: 'litecoin', symbol: 'LTCUSDT', display: 'LTC/USDT' },
+                { id: 'near', symbol: 'NEARUSDT', display: 'NEAR/USDT' },
+                { id: 'aptos', symbol: 'APTUSDT', display: 'APT/USDT' },
+                { id: 'arbitrum', symbol: 'ARBUSDT', display: 'ARB/USDT' }
+            ],
+            binanceAPI: 'https://api.binance.com/api/v3',
+            updateInterval: 60000,
+            maxTrades: 3,
+            aiProviders: {
+                groq: {
+                    name: 'Groq',
+                    url: 'https://api.groq.com/openai/v1/chat/completions',
+                    model: 'llama-3.1-8b-instant',
+                    keyPrefix: 'gsk_'
+                },
+                claude: {
+                    name: 'Claude',
+                    url: 'https://api.anthropic.com/v1/messages',
+                    model: 'claude-3-haiku-20240307',
+                    keyPrefix: 'sk-ant-'
+                },
+                openai: {
+                    name: 'OpenAI',
+                    url: 'https://api.openai.com/v1/chat/completions',
+                    model: 'gpt-4o-mini',
+                    keyPrefix: 'sk-'
+                }
+            },
+            // V8 MODOS DE IA
+            aiModes: {
+                conservative: {
+                    name: 'Conservadora',
+                    minScore: 60,
+                    minConfidence: 70,
+                    minSignals: 4,
+                    allowObservar: false,
+                    promptStyle: 'conservador',
+                    description: 'Solo entra con senales muy claras'
+                },
+                normal: {
+                    name: 'Normal',
+                    minScore: 50,
+                    minConfidence: 50,
+                    minSignals: 3,
+                    allowObservar: false,
+                    promptStyle: 'balanceado',
+                    description: 'Balance entre riesgo y oportunidad'
+                },
+                aggressive: {
+                    name: 'Agresiva',
+                    minScore: 30,
+                    minConfidence: 30,
+                    minSignals: 2,
+                    allowObservar: true,
+                    promptStyle: 'agresivo',
+                    description: 'Busca oportunidades en todo momento'
+                }
+            },
+            currentAIMode: 'normal',
+            // V8 NUEVAS CONFIGURACIONES DE PROTECCION
+            protections: {
+                breakeven: {
+                    enabled: true,
+                    triggerPercent: 0.5  // Mover SL a entrada cuando hay +0.5%
+                },
+                partialTP: {
+                    enabled: true,
+                    firstTPPercent: 1.0,  // Cerrar 50% en +1%
+                    firstTPSize: 0.5       // 50% de la posicion
+                },
+                trendFilter: {
+                    enabled: true,
+                    minTrendStrength: 30  // Fuerza minima de tendencia BTC
+                },
+                volumeFilter: {
+                    enabled: true,
+                    minVolumeRatio: 0.8   // Volume debe ser >= 80% del promedio
+                },
+                cooldown: {
+                    enabled: true,
+                    durationMinutes: 5,   // Esperar 5 min despues de loss
+                    active: false,
+                    endTime: null
+                },
+                horarios: {
+                    enabled: true,
+                    // Horarios UTC de alta liquidez
+                    goodHours: [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21]
+                },
+                dynamicRR: {
+                    enabled: true,
+                    useATR: true
+                },
+                // NUEVO: Trailing Stop
+                trailingStop: {
+                    enabled: true,
+                    activationPercent: 1.0,  // Activar cuando hay +1%
+                    trailPercent: 0.5        // Trail al 0.5%
+                },
+                // NUEVO: Position Sizing Dinamico (Kelly Criterion)
+                dynamicPositionSizing: {
+                    enabled: true,
+                    useKellyCriterion: true,
+                    minPercent: 1,           // Minimo 1% por trade
+                    maxPercent: 8,           // Maximo 8% por trade (backtesting)
+                    defaultPercent: 3        // Default si no hay historial
+                }
+            },
+            // Max trades ampliado para backtesting
+            maxTrades: 5
+        };
+
+        // State
+        let state = {
+            aiProvider: 'groq',
+            aiConnected: false,
+            isRunning: false,
+            currentBalance: 10000,
+            initialBalance: 10000,
+            activeTrades: [],
+            tradeHistory: [],
+            aiCalls: 0,
+            tradesBlocked: 0,
+            historicalData: {},
+            btcTrend: { trend: 'neutral', strength: 0 },
+            lastLossTime: null,
+            updateTimer: null,
+            cooldownTimer: null,
+            // Firebase
+            firebaseUrl: null,
+            userName: 'Usuario'
+        };
+
+        // =====================================================
+        // AI MODE SELECTOR
+        // =====================================================
+
+        function setAIMode(mode) {
+            CONFIG.currentAIMode = mode;
+
+            // Update UI
+            document.querySelectorAll('.ai-mode-option').forEach(el => el.classList.remove('active'));
+            document.querySelector(`[data-mode="${mode}"]`).classList.add('active');
+
+            const modeConfig = CONFIG.aiModes[mode];
+            showToast(`Modo ${modeConfig.name}: ${modeConfig.description}`, 'info');
+
+            // Update AI response bar
+            document.getElementById('aiMainResponse').textContent = `Modo ${modeConfig.name} activado - ${modeConfig.description}`;
+
+            saveToLocal();
+        }
+
+        function getAIModeConfig() {
+            return CONFIG.aiModes[CONFIG.currentAIMode] || CONFIG.aiModes.normal;
+        }
+
+        // =====================================================
+        // AI PROVIDERS
+        // =====================================================
+
+        function selectAI(provider) {
+            state.aiProvider = provider;
+            document.querySelectorAll('.ai-option').forEach(el => el.classList.remove('active'));
+            document.querySelector(`[data-provider="${provider}"]`).classList.add('active');
+
+            const providerConfig = CONFIG.aiProviders[provider];
+            document.getElementById('providerBadge').textContent = providerConfig.name;
+            document.getElementById('aiModelBadge').textContent = `${providerConfig.name} - ${providerConfig.model}`;
+
+            // Cargar API key guardada
+            const savedKey = localStorage.getItem(`apiKey_${provider}`);
+            if (savedKey) {
+                document.getElementById('apiKeyInput').value = savedKey;
+            } else {
+                document.getElementById('apiKeyInput').value = '';
+            }
+        }
+
+        async function testAIConnection() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (!apiKey) {
+                showToast('Ingresa una API Key', 'error');
+                return false;
+            }
+
+            const provider = CONFIG.aiProviders[state.aiProvider];
+
+            try {
+                const response = await callAI('Responde solo con: OK');
+                if (response) {
+                    state.aiConnected = true;
+                    localStorage.setItem(`apiKey_${state.aiProvider}`, apiKey);
+                    updateAIConnectionStatus(true);
+                    showToast(`${provider.name} conectado!`, 'success');
+                    return true;
+                }
+            } catch (error) {
+                showToast('Error de conexion: ' + error.message, 'error');
+            }
+
+            state.aiConnected = false;
+            updateAIConnectionStatus(false);
+            return false;
+        }
+
+        async function callAI(prompt) {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            const provider = CONFIG.aiProviders[state.aiProvider];
+
+            state.aiCalls++;
+            document.getElementById('aiCalls').textContent = state.aiCalls;
+            document.getElementById('aiCallsTop').textContent = state.aiCalls;
+
+            if (state.aiProvider === 'claude') {
+                const response = await fetch(provider.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': apiKey,
+                        'anthropic-version': '2023-06-01',
+                        'anthropic-dangerous-direct-browser-access': 'true'
+                    },
+                    body: JSON.stringify({
+                        model: provider.model,
+                        max_tokens: 500,
+                        messages: [{ role: 'user', content: prompt }]
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+                return data.content[0].text;
+            } else {
+                const response = await fetch(provider.url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: provider.model,
+                        messages: [{ role: 'user', content: prompt }],
+                        max_tokens: 500,
+                        temperature: 0.3
+                    })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+                return data.choices[0].message.content;
+            }
+        }
+
+        function updateAIConnectionStatus(connected) {
+            const dot = document.getElementById('aiConnStatus');
+            const text = document.getElementById('aiConnStatusText');
+            if (connected) {
+                dot.className = 'status-dot green';
+                text.textContent = 'IA ✓';
+            } else {
+                dot.className = 'status-dot red';
+                text.textContent = 'IA ✗';
+            }
+        }
+
+        // =====================================================
+        // V8 PROTECTION FUNCTIONS
+        // =====================================================
+
+        function toggleProtection(name) {
+            const toggle = document.getElementById(`toggle${name.charAt(0).toUpperCase() + name.slice(1)}`);
+            const isActive = toggle.classList.toggle('active');
+            CONFIG.protections[name].enabled = isActive;
+            updateProtectionIndicators();
+            saveToLocal();
+        }
+
+        function updateProtectionIndicators() {
+            const protections = CONFIG.protections;
+
+            updateProtIndicator('protBreakeven', protections.breakeven.enabled);
+            updateProtIndicator('protPartialTP', protections.partialTP.enabled);
+            updateProtIndicator('protTrendFilter', protections.trendFilter.enabled);
+            updateProtIndicator('protVolumeFilter', protections.volumeFilter.enabled);
+            updateProtIndicator('protCooldown', protections.cooldown.enabled);
+            updateProtIndicator('protHorarios', protections.horarios.enabled);
+        }
+
+        function updateProtIndicator(id, active) {
+            const el = document.getElementById(id);
+            el.className = `protection-item ${active ? 'active' : 'inactive'}`;
+        }
+
+        // BREAK-EVEN: Mover SL a entrada cuando hay ganancia
+        function checkBreakeven(trade, currentPrice) {
+            if (!CONFIG.protections.breakeven.enabled || trade.breakevenActivated) return;
+
+            const pnlPercent = trade.action === 'LONG'
+                ? ((currentPrice - trade.entryPrice) / trade.entryPrice) * 100
+                : ((trade.entryPrice - currentPrice) / trade.entryPrice) * 100;
+
+            if (pnlPercent >= CONFIG.protections.breakeven.triggerPercent) {
+                trade.stopLoss = trade.entryPrice;
+                trade.breakevenActivated = true;
+                showToast(`Break-even activado en ${trade.symbol}`, 'info');
+            }
+        }
+
+        // PARTIAL TP: Cerrar parte de la posicion en primer objetivo
+        function checkPartialTP(trade, currentPrice) {
+            if (!CONFIG.protections.partialTP.enabled || trade.partialTPTaken) return null;
+
+            const pnlPercent = trade.action === 'LONG'
+                ? ((currentPrice - trade.entryPrice) / trade.entryPrice) * 100
+                : ((trade.entryPrice - currentPrice) / trade.entryPrice) * 100;
+
+            if (pnlPercent >= CONFIG.protections.partialTP.firstTPPercent) {
+                const closeSize = trade.amount * CONFIG.protections.partialTP.firstTPSize;
+                const pnl = closeSize * (pnlPercent / 100);
+
+                trade.amount -= closeSize;
+                trade.quantity *= (1 - CONFIG.protections.partialTP.firstTPSize);
+                trade.partialTPTaken = true;
+                trade.partialPnL = pnl;
+
+                state.currentBalance += closeSize + pnl;
+                showToast(`Partial TP: +$${pnl.toFixed(2)} en ${trade.symbol}`, 'success');
+
+                return pnl;
+            }
+            return null;
+        }
+
+        // TRAILING STOP: Mover SL siguiendo el precio cuando hay ganancia
+        function checkTrailingStop(trade, currentPrice) {
+            if (!CONFIG.protections.trailingStop.enabled) return;
+
+            const pnlPercent = trade.action === 'LONG'
+                ? ((currentPrice - trade.entryPrice) / trade.entryPrice) * 100
+                : ((trade.entryPrice - currentPrice) / trade.entryPrice) * 100;
+
+            // Activar trailing stop cuando alcanza el umbral
+            if (pnlPercent >= CONFIG.protections.trailingStop.activationPercent) {
+                if (!trade.trailingStopActivated) {
+                    trade.trailingStopActivated = true;
+                    trade.highestPrice = currentPrice;
+                    trade.lowestPrice = currentPrice;
+                    showToast(`Trailing Stop activado en ${trade.symbol}`, 'info');
+                }
+
+                // Actualizar precio maximo/minimo
+                if (trade.action === 'LONG') {
+                    if (currentPrice > trade.highestPrice) {
+                        trade.highestPrice = currentPrice;
+                        // Mover SL al trail
+                        const newSL = trade.highestPrice * (1 - CONFIG.protections.trailingStop.trailPercent / 100);
+                        if (newSL > trade.stopLoss) {
+                            trade.stopLoss = newSL;
+                            console.log(`Trailing SL actualizado: ${trade.symbol} -> $${newSL.toFixed(2)}`);
+                        }
+                    }
+                } else { // SHORT
+                    if (currentPrice < trade.lowestPrice) {
+                        trade.lowestPrice = currentPrice;
+                        // Mover SL al trail
+                        const newSL = trade.lowestPrice * (1 + CONFIG.protections.trailingStop.trailPercent / 100);
+                        if (newSL < trade.stopLoss) {
+                            trade.stopLoss = newSL;
+                            console.log(`Trailing SL actualizado: ${trade.symbol} -> $${newSL.toFixed(2)}`);
+                        }
+                    }
+                }
+            }
+        }
+
+        // POSITION SIZING DINAMICO: Kelly Criterion
+        function calculatePositionSize() {
+            const ps = CONFIG.protections.dynamicPositionSizing;
+            if (!ps.enabled) {
+                return parseInt(document.getElementById('tradePercent').value) || ps.defaultPercent;
+            }
+
+            // Necesitamos al menos 10 trades para calcular
+            if (state.tradeHistory.length < 10) {
+                return ps.defaultPercent;
+            }
+
+            // Calcular win rate y ratio promedio
+            const recentTrades = state.tradeHistory.slice(0, 50);
+            const wins = recentTrades.filter(t => t.pnl > 0);
+            const losses = recentTrades.filter(t => t.pnl <= 0);
+
+            if (wins.length === 0 || losses.length === 0) {
+                return ps.defaultPercent;
+            }
+
+            const winRate = wins.length / recentTrades.length;
+            const avgWin = wins.reduce((s, t) => s + t.pnl, 0) / wins.length;
+            const avgLoss = Math.abs(losses.reduce((s, t) => s + t.pnl, 0) / losses.length);
+
+            // Kelly Criterion: f* = (bp - q) / b
+            // b = ratio ganancia/perdida, p = prob ganar, q = prob perder
+            const b = avgWin / avgLoss;
+            const p = winRate;
+            const q = 1 - p;
+            let kelly = ((b * p) - q) / b;
+
+            // Kelly fraccional (usar 25% del Kelly para ser conservador)
+            kelly = kelly * 0.25;
+
+            // Limitar entre min y max
+            kelly = Math.max(ps.minPercent, Math.min(ps.maxPercent, kelly * 100));
+
+            console.log(`Kelly Criterion: WinRate=${(winRate*100).toFixed(1)}%, AvgWin=$${avgWin.toFixed(2)}, AvgLoss=$${avgLoss.toFixed(2)}, Kelly=${kelly.toFixed(2)}%`);
+
+            return kelly;
+        }
+
+        // TREND FILTER: Solo operar a favor de tendencia BTC
+        function passesTrendFilter(action) {
+            if (!CONFIG.protections.trendFilter.enabled) return { pass: true };
+
+            const btcTrend = state.btcTrend;
+
+            if (btcTrend.strength < CONFIG.protections.trendFilter.minTrendStrength) {
+                return { pass: true }; // Tendencia debil, no filtrar
+            }
+
+            // Si BTC es bearish y queremos LONG en altcoin = filtrar
+            if (btcTrend.trend === 'bearish' && action === 'LONG') {
+                return { pass: false, reason: 'BTC bearish - evitando LONG' };
+            }
+
+            // Si BTC es bullish y queremos SHORT en altcoin = filtrar
+            if (btcTrend.trend === 'bullish' && action === 'SHORT') {
+                return { pass: false, reason: 'BTC bullish - evitando SHORT' };
+            }
+
+            return { pass: true };
+        }
+
+        // VOLUME FILTER: Evitar operar con volumen bajo
+        function passesVolumeFilter(symbol, currentVolume) {
+            if (!CONFIG.protections.volumeFilter.enabled) return { pass: true };
+
+            const hist = state.historicalData[symbol];
+            if (!hist || !hist.volumes || hist.volumes.length < 20) return { pass: true };
+
+            const avgVolume = hist.volumes.slice(-20).reduce((a, b) => a + b, 0) / 20;
+            const ratio = currentVolume / avgVolume;
+
+            if (ratio < CONFIG.protections.volumeFilter.minVolumeRatio) {
+                return { pass: false, reason: `Volumen bajo (${(ratio * 100).toFixed(0)}% del promedio)` };
+            }
+
+            return { pass: true };
+        }
+
+        // COOLDOWN: Esperar despues de una perdida
+        function activateCooldown() {
+            if (!CONFIG.protections.cooldown.enabled) return;
+
+            CONFIG.protections.cooldown.active = true;
+            CONFIG.protections.cooldown.endTime = Date.now() + (CONFIG.protections.cooldown.durationMinutes * 60 * 1000);
+
+            document.getElementById('cooldownOverlay').classList.add('active');
+            document.getElementById('cooldownStat').style.display = 'flex';
+            updateProtIndicator('protCooldown', false);
+            document.getElementById('protCooldown').classList.add('warning');
+
+            startCooldownTimer();
+        }
+
+        function startCooldownTimer() {
+            if (state.cooldownTimer) clearInterval(state.cooldownTimer);
+
+            state.cooldownTimer = setInterval(() => {
+                const remaining = CONFIG.protections.cooldown.endTime - Date.now();
+
+                if (remaining <= 0) {
+                    endCooldown();
+                    return;
+                }
+
+                const minutes = Math.floor(remaining / 60000);
+                const seconds = Math.floor((remaining % 60000) / 1000);
+                document.getElementById('cooldownTimer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function endCooldown() {
+            CONFIG.protections.cooldown.active = false;
+            CONFIG.protections.cooldown.endTime = null;
+
+            if (state.cooldownTimer) {
+                clearInterval(state.cooldownTimer);
+                state.cooldownTimer = null;
+            }
+
+            document.getElementById('cooldownOverlay').classList.remove('active');
+            document.getElementById('cooldownStat').style.display = 'none';
+            updateProtIndicator('protCooldown', CONFIG.protections.cooldown.enabled);
+            document.getElementById('protCooldown').classList.remove('warning');
+
+            showToast('Cooldown terminado - Trading reanudado', 'success');
+        }
+
+        function isCooldownActive() {
+            if (!CONFIG.protections.cooldown.enabled || !CONFIG.protections.cooldown.active) return false;
+
+            if (Date.now() >= CONFIG.protections.cooldown.endTime) {
+                endCooldown();
+                return false;
+            }
+            return true;
+        }
+
+        // HORARIOS: Solo operar en horarios de alta liquidez
+        function passesHorariosFilter() {
+            if (!CONFIG.protections.horarios.enabled) return { pass: true };
+
+            const currentHour = new Date().getUTCHours();
+
+            if (!CONFIG.protections.horarios.goodHours.includes(currentHour)) {
+                return { pass: false, reason: `Hora ${currentHour}:00 UTC - baja liquidez` };
+            }
+
+            return { pass: true };
+        }
+
+        // DYNAMIC R:R - Calcular ATR para TP/SL dinamicos
+        function calculateATR(highs, lows, closes, period = 14) {
+            if (!highs || highs.length < period + 1) return null;
+
+            let trSum = 0;
+            for (let i = closes.length - period; i < closes.length; i++) {
+                const tr = Math.max(
+                    highs[i] - lows[i],
+                    Math.abs(highs[i] - closes[i - 1]),
+                    Math.abs(lows[i] - closes[i - 1])
+                );
+                trSum += tr;
+            }
+
+            return trSum / period;
+        }
+
+        function getDynamicTPSL(symbol, price, action) {
+            if (!CONFIG.protections.dynamicRR.enabled) {
+                // Valores por defecto
+                return { tp: 1.5, sl: 1.0 };
+            }
+
+            const hist = state.historicalData[symbol];
+            if (!hist || !hist.highs) {
+                return { tp: 1.5, sl: 1.0 };
+            }
+
+            const atr = calculateATR(hist.highs, hist.lows, hist.closes);
+            if (!atr) return { tp: 1.5, sl: 1.0 };
+
+            const atrPercent = (atr / price) * 100;
+
+            // SL = 1.5 ATR, TP = 2.5 ATR (Ratio 1:1.67)
+            const sl = Math.max(0.5, Math.min(3.0, atrPercent * 1.5));
+            const tp = Math.max(1.0, Math.min(5.0, atrPercent * 2.5));
+
+            return { tp, sl };
+        }
+
+        // =====================================================
+        // AI TRADING LOGIC (MEJORADO V8)
+        // =====================================================
+
+        async function askAIForDecision(opportunities) {
+            if (!state.aiConnected || opportunities.length === 0) return [];
+
+            const modeConfig = getAIModeConfig();
+            const topOpps = opportunities.slice(0, 5);
+
+            // Mostrar thinking
+            document.getElementById('aiThinkingBar').style.display = 'flex';
+            document.getElementById('aiMainResponse').style.display = 'none';
+
+            // Obtener contexto
+            const btcCorrelation = getBTCCorrelation();
+            state.btcTrend = btcCorrelation;
+            const tradeMemory = getTradeMemory();
+
+            // Preparar datos enriquecidos
+            const enrichedOpps = await Promise.all(topOpps.map(async (o) => {
+                const hist = state.historicalData[o.symbol];
+                let candlePattern = { pattern: 'none', signal: 'neutral', strength: 0 };
+                let mtfAnalysis = { aligned: false, direction: 'neutral', confidence: 0 };
+
+                if (hist && hist.opens) {
+                    candlePattern = detectCandlePatterns(hist.opens, hist.highs, hist.lows, hist.closes);
+                }
+
+                if (topOpps.indexOf(o) < 3) {
+                    const mtfData = await fetchMultiTimeframeData(o.symbol);
+                    mtfAnalysis = analyzeMultiTimeframe(mtfData);
+                }
+
+                const avoidCheck = shouldAvoidTrade(o.symbol, o.action);
+                const trendCheck = passesTrendFilter(o.action);
+                const volumeCheck = passesVolumeFilter(o.symbol, o.volume || 0);
+                const horariosCheck = passesHorariosFilter();
+
+                return { ...o, candlePattern, mtfAnalysis, avoidCheck, trendCheck, volumeCheck, horariosCheck };
+            }));
+
+            // PROMPTS SEGUN MODO
+            const prompts = {
+                conservative: `Eres un trader MUY CONSERVADOR. Tu UNICA prioridad es PROTEGER EL CAPITAL.
+
+=== REGLAS ESTRICTAS ===
+1. SOLO recomendar trades con probabilidad MUY ALTA (4+ indicadores alineados)
+2. Si hay CUALQUIER duda, responde SKIP
+3. Confidence minimo 70% para recomendar
+4. Si BTC baja, NO LONG en altcoins bajo ninguna circunstancia
+5. Solo entrar si multi-timeframe esta ALINEADO
+6. Preferir NO operar a perder dinero`,
+
+                normal: `Eres un trader BALANCEADO. Buscas oportunidades con buen ratio riesgo/beneficio.
+
+=== REGLAS ===
+1. Recomendar trades con 3+ indicadores alineados
+2. Confidence entre 50-80% segun la fuerza de la senal
+3. Considerar BTC pero no descartar todo si baja
+4. Multi-timeframe es importante pero no obligatorio
+5. Buscar balance entre oportunidad y seguridad`,
+
+                aggressive: `Eres un trader AGRESIVO que busca MAXIMIZAR oportunidades.
+
+=== REGLAS ===
+1. Buscar oportunidades en CADA movimiento del mercado
+2. 2 indicadores alineados son suficientes para entrar
+3. Confidence alto (60-90%) - confias en tus analisis
+4. Incluso si el mercado esta lateral, busca micro-movimientos
+5. RSI entre 35-65 puede ser oportunidad si hay otros indicadores
+6. No tener miedo de entrar - las protecciones (SL/TP) nos cuidan
+7. IMPORTANTE: Si no ves LONG claro, considera SHORT y viceversa`
+            };
+
+            const prompt = `${prompts[CONFIG.currentAIMode]}
+
+=== MODO ACTUAL: ${modeConfig.name.toUpperCase()} ===
+
+=== CONTEXTO MERCADO ===
+- BTC: ${btcCorrelation.trend} (${btcCorrelation.change}%)
+- Win Rate historico: ${tradeMemory.overallWinRate}%
+${tradeMemory.insights.slice(0, 2).map(i => `- ${i.message}`).join('\n')}
+
+=== OPORTUNIDADES ===
+${enrichedOpps.map((o, i) => `
+${i+1}. ${o.symbol} [Score: ${o.score}/100]
+   RSI=${o.indicators.rsi.toFixed(0)}, MACD=${o.indicators.macd}, Stoch=${o.indicators.stoch?.toFixed(0) || 'N/A'}
+   Patron Vela: ${o.candlePattern.pattern} (${o.candlePattern.signal}, fuerza:${o.candlePattern.strength})
+   Multi-TF: ${o.mtfAnalysis.aligned ? 'ALINEADO '+o.mtfAnalysis.direction : 'No alineado'}
+   Senal actual: ${o.action} | Confluencia: ${o.confluence.long}L/${o.confluence.short}S
+`).join('')}
+
+IMPORTANTE: En modo ${modeConfig.name}, ${CONFIG.currentAIMode === 'aggressive' ? 'DEBES encontrar al menos 1-2 trades. El mercado SIEMPRE tiene oportunidades.' : CONFIG.currentAIMode === 'conservative' ? 'solo recomienda si estas MUY seguro.' : 'busca balance.'}
+
+Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidence":0-100,"reasoning":"breve"}],"marketAnalysis":"resumen"}`;
+
+            try {
+                const response = await callAI(prompt);
+
+                // Ocultar thinking, mostrar respuesta
+                document.getElementById('aiThinkingBar').style.display = 'none';
+                document.getElementById('aiMainResponse').style.display = 'block';
+
+                // Parser JSON mejorado - maneja respuestas mal formadas
+                let parsed = null;
+                try {
+                    // Intentar extraer JSON de la respuesta
+                    const jsonMatch = response.match(/\{[\s\S]*?\}(?=\s*$|\s*[^,\]\}])/);
+                    if (jsonMatch) {
+                        // Limpiar el JSON de caracteres extra
+                        let jsonStr = jsonMatch[0];
+                        // Encontrar el cierre correcto del JSON
+                        let braceCount = 0;
+                        let endIndex = 0;
+                        for (let i = 0; i < jsonStr.length; i++) {
+                            if (jsonStr[i] === '{') braceCount++;
+                            if (jsonStr[i] === '}') braceCount--;
+                            if (braceCount === 0) {
+                                endIndex = i + 1;
+                                break;
+                            }
+                        }
+                        jsonStr = jsonStr.substring(0, endIndex);
+                        parsed = JSON.parse(jsonStr);
+                    }
+                } catch (parseError) {
+                    console.log('JSON parse error, trying alternative method:', parseError);
+                    // Metodo alternativo: buscar decisions array
+                    try {
+                        const decisionsMatch = response.match(/"decisions"\s*:\s*\[([\s\S]*?)\]/);
+                        const analysisMatch = response.match(/"marketAnalysis"\s*:\s*"([^"]*)"/);
+                        if (decisionsMatch) {
+                            const decisionsStr = '[' + decisionsMatch[1] + ']';
+                            const decisions = JSON.parse(decisionsStr.replace(/'/g, '"'));
+                            parsed = {
+                                decisions: decisions,
+                                marketAnalysis: analysisMatch ? analysisMatch[1] : 'Analisis completado'
+                            };
+                        }
+                    } catch (e2) {
+                        console.log('Alternative parse also failed:', e2);
+                    }
+                }
+
+                if (parsed) {
+                    // Actualizar UI de respuesta de IA
+                    document.getElementById('aiMainResponse').textContent = parsed.marketAnalysis || 'Analisis completado';
+                    document.getElementById('aiResponseTime').textContent = new Date().toLocaleTimeString();
+                    document.getElementById('aiBTCTrend').textContent = `${btcCorrelation.trend} (${btcCorrelation.change}%)`;
+                    document.getElementById('aiTrendStat').className = `ai-stat ${btcCorrelation.trend === 'bullish' ? 'success' : btcCorrelation.trend === 'bearish' ? 'danger' : ''}`;
+
+                    // Mostrar confianza maxima
+                    if (parsed.decisions && parsed.decisions.length > 0) {
+                        const maxConf = Math.max(...parsed.decisions.map(d => d.confidence || 0));
+                        document.getElementById('aiConfidence').textContent = maxConf + '%';
+                    }
+
+                    return parsed.decisions || [];
+                } else {
+                    document.getElementById('aiMainResponse').textContent = 'IA respondio pero no pudo parsearse. Reintentando...';
+                }
+            } catch (error) {
+                console.error('AI Decision error:', error);
+                document.getElementById('aiThinkingBar').style.display = 'none';
+                document.getElementById('aiMainResponse').style.display = 'block';
+                document.getElementById('aiMainResponse').textContent = 'Error de conexion: ' + error.message;
+            }
+
+            return [];
+        }
+
+        // =====================================================
+        // MARKET DATA & INDICATORS
+        // =====================================================
+
+        async function fetchBinanceData() {
+            try {
+                const symbols = CONFIG.cryptos.map(c => c.symbol);
+                const promises = symbols.map(s =>
+                    fetch(`${CONFIG.binanceAPI}/ticker/24hr?symbol=${s}`).then(r => r.json())
+                );
+                const tickers = await Promise.all(promises);
+
+                const data = [];
+                tickers.forEach((t, i) => {
+                    if (t && t.lastPrice) {
+                        data.push({
+                            id: CONFIG.cryptos[i].id,
+                            symbol: CONFIG.cryptos[i].display,
+                            price: parseFloat(t.lastPrice),
+                            high24h: parseFloat(t.highPrice),
+                            low24h: parseFloat(t.lowPrice),
+                            change24h: parseFloat(t.priceChangePercent),
+                            volume: parseFloat(t.volume)
+                        });
+                    }
+                });
+
+                document.getElementById('apiStatus').className = 'status-dot green';
+                document.getElementById('apiStatusText').textContent = 'Binance ✓';
+                return data;
+            } catch (e) {
+                document.getElementById('apiStatus').className = 'status-dot red';
+                document.getElementById('apiStatusText').textContent = 'API ✗';
+                return [];
+            }
+        }
+
+        async function fetchHistoricalData(symbol) {
+            try {
+                const binanceSymbol = CONFIG.cryptos.find(c => c.display === symbol)?.symbol;
+                if (!binanceSymbol) return null;
+
+                const r = await fetch(`${CONFIG.binanceAPI}/klines?symbol=${binanceSymbol}&interval=1h&limit=100`);
+                const klines = await r.json();
+
+                return {
+                    opens: klines.map(k => parseFloat(k[1])),
+                    closes: klines.map(k => parseFloat(k[4])),
+                    highs: klines.map(k => parseFloat(k[2])),
+                    lows: klines.map(k => parseFloat(k[3])),
+                    volumes: klines.map(k => parseFloat(k[5]))
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        // Technical Indicators
+        function calculateRSI(closes, period = 14) {
+            if (closes.length < period + 1) return 50;
+            let gains = 0, losses = 0;
+            for (let i = closes.length - period; i < closes.length; i++) {
+                const change = closes[i] - closes[i - 1];
+                if (change > 0) gains += change;
+                else losses -= change;
+            }
+            if (losses === 0) return 100;
+            return 100 - (100 / (1 + (gains / period) / (losses / period)));
+        }
+
+        function calculateEMA(closes, period) {
+            if (closes.length < period) return closes[closes.length - 1];
+            const mult = 2 / (period + 1);
+            let ema = closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
+            for (let i = period; i < closes.length; i++) {
+                ema = (closes[i] - ema) * mult + ema;
+            }
+            return ema;
+        }
+
+        function calculateMACD(closes) {
+            const ema12 = calculateEMA(closes, 12);
+            const ema26 = calculateEMA(closes, 26);
+            return { trend: ema12 > ema26 ? 'bullish' : 'bearish' };
+        }
+
+        function calculateBB(closes, period = 20) {
+            if (closes.length < period) return { position: 50 };
+            const slice = closes.slice(-period);
+            const sma = slice.reduce((a, b) => a + b, 0) / period;
+            const std = Math.sqrt(slice.reduce((s, c) => s + Math.pow(c - sma, 2), 0) / period);
+            const upper = sma + 2 * std;
+            const lower = sma - 2 * std;
+            return { position: upper !== lower ? ((closes[closes.length - 1] - lower) / (upper - lower)) * 100 : 50 };
+        }
+
+        function calculateStochastic(closes, highs, lows, period = 14) {
+            if (closes.length < period) return 50;
+            const hh = Math.max(...highs.slice(-period));
+            const ll = Math.min(...lows.slice(-period));
+            if (hh === ll) return 50;
+            return ((closes[closes.length - 1] - ll) / (hh - ll)) * 100;
+        }
+
+        // =====================================================
+        // CANDLE PATTERNS & MULTI-TIMEFRAME
+        // =====================================================
+
+        function detectCandlePatterns(opens, highs, lows, closes) {
+            if (!opens || opens.length < 3) return { pattern: 'none', signal: 'neutral', strength: 0 };
+
+            const i = closes.length - 1;
+            const body = Math.abs(closes[i] - opens[i]);
+            const upperWick = highs[i] - Math.max(closes[i], opens[i]);
+            const lowerWick = Math.min(closes[i], opens[i]) - lows[i];
+            const range = highs[i] - lows[i];
+            const isBullish = closes[i] > opens[i];
+
+            if (body < range * 0.1) {
+                return { pattern: 'doji', signal: 'reversal', strength: 60 };
+            }
+
+            if (lowerWick > body * 2 && upperWick < body * 0.5 && !isBullish) {
+                return { pattern: 'hammer', signal: 'bullish', strength: 80 };
+            }
+
+            if (upperWick > body * 2 && lowerWick < body * 0.5 && isBullish) {
+                return { pattern: 'shooting_star', signal: 'bearish', strength: 75 };
+            }
+
+            if (i > 0 && closes[i] > opens[i] && closes[i-1] < opens[i-1] &&
+                closes[i] > opens[i-1] && opens[i] < closes[i-1]) {
+                return { pattern: 'bullish_engulfing', signal: 'bullish', strength: 85 };
+            }
+
+            if (i > 0 && closes[i] < opens[i] && closes[i-1] > opens[i-1] &&
+                closes[i] < opens[i-1] && opens[i] > closes[i-1]) {
+                return { pattern: 'bearish_engulfing', signal: 'bearish', strength: 85 };
+            }
+
+            return { pattern: 'none', signal: 'neutral', strength: 0 };
+        }
+
+        function getBTCCorrelation() {
+            const btcData = state.historicalData['BTC/USDT'];
+            if (!btcData || !btcData.closes || btcData.closes.length < 10) {
+                return { trend: 'neutral', strength: 0, change: 0 };
+            }
+
+            const closes = btcData.closes;
+            const recent = closes.slice(-5);
+            const older = closes.slice(-10, -5);
+
+            const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+            const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
+            const change = ((recentAvg - olderAvg) / olderAvg) * 100;
+
+            let trend = 'neutral';
+            let strength = Math.min(100, Math.abs(change) * 20);
+
+            if (change > 0.5) trend = 'bullish';
+            else if (change < -0.5) trend = 'bearish';
+
+            return { trend, strength, change: change.toFixed(2) };
+        }
+
+        async function fetchMultiTimeframeData(symbol) {
+            try {
+                const binanceSymbol = CONFIG.cryptos.find(c => c.display === symbol)?.symbol;
+                if (!binanceSymbol) return null;
+
+                const [klines15m, klines1h, klines4h] = await Promise.all([
+                    fetch(`${CONFIG.binanceAPI}/klines?symbol=${binanceSymbol}&interval=15m&limit=50`).then(r => r.json()),
+                    fetch(`${CONFIG.binanceAPI}/klines?symbol=${binanceSymbol}&interval=1h&limit=50`).then(r => r.json()),
+                    fetch(`${CONFIG.binanceAPI}/klines?symbol=${binanceSymbol}&interval=4h&limit=50`).then(r => r.json())
+                ]);
+
+                const processKlines = (klines) => ({
+                    opens: klines.map(k => parseFloat(k[1])),
+                    highs: klines.map(k => parseFloat(k[2])),
+                    lows: klines.map(k => parseFloat(k[3])),
+                    closes: klines.map(k => parseFloat(k[4]))
+                });
+
+                return {
+                    tf15m: processKlines(klines15m),
+                    tf1h: processKlines(klines1h),
+                    tf4h: processKlines(klines4h)
+                };
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function analyzeMultiTimeframe(mtfData) {
+            if (!mtfData) return { aligned: false, direction: 'neutral', confidence: 0 };
+
+            const trends = [];
+
+            for (const [tf, data] of Object.entries(mtfData)) {
+                if (data.closes.length > 20) {
+                    const ema9 = calculateEMA(data.closes, 9);
+                    const ema21 = calculateEMA(data.closes, 21);
+                    const rsi = calculateRSI(data.closes);
+
+                    let trend = 'neutral';
+                    if (ema9 > ema21 && rsi > 50) trend = 'bullish';
+                    else if (ema9 < ema21 && rsi < 50) trend = 'bearish';
+
+                    trends.push({ tf, trend, rsi });
+                }
+            }
+
+            const bullishCount = trends.filter(t => t.trend === 'bullish').length;
+            const bearishCount = trends.filter(t => t.trend === 'bearish').length;
+
+            let direction = 'neutral';
+            let aligned = false;
+            let confidence = 0;
+
+            if (bullishCount === 3) {
+                direction = 'bullish';
+                aligned = true;
+                confidence = 90;
+            } else if (bearishCount === 3) {
+                direction = 'bearish';
+                aligned = true;
+                confidence = 90;
+            } else if (bullishCount === 2) {
+                direction = 'bullish';
+                confidence = 60;
+            } else if (bearishCount === 2) {
+                direction = 'bearish';
+                confidence = 60;
+            }
+
+            return { aligned, direction, confidence, details: trends };
+        }
+
+        // =====================================================
+        // TRADE MEMORY
+        // =====================================================
+
+        function getTradeMemory() {
+            const history = state.tradeHistory.slice(-50);
+            if (history.length < 5) return { insights: [], overallWinRate: 0 };
+
+            const wins = history.filter(t => t.pnl > 0).length;
+            const insights = [];
+
+            const patterns = {};
+            for (const trade of history) {
+                const key = `${trade.symbol}_${trade.action}`;
+                if (!patterns[key]) patterns[key] = { wins: 0, losses: 0 };
+                if (trade.pnl > 0) patterns[key].wins++;
+                else patterns[key].losses++;
+            }
+
+            for (const [key, data] of Object.entries(patterns)) {
+                const total = data.wins + data.losses;
+                if (total >= 3) {
+                    const wr = (data.wins / total) * 100;
+                    if (wr > 65) insights.push({ type: 'positive', message: `${key}: ${wr.toFixed(0)}% win rate` });
+                    if (wr < 35) insights.push({ type: 'negative', pattern: key, message: `EVITAR ${key}: ${wr.toFixed(0)}% win rate` });
+                }
+            }
+
+            return {
+                insights,
+                overallWinRate: history.length > 0 ? (wins / history.length * 100).toFixed(1) : 0
+            };
+        }
+
+        function shouldAvoidTrade(symbol, action) {
+            const memory = getTradeMemory();
+            const key = `${symbol}_${action}`;
+
+            for (const insight of memory.insights) {
+                if (insight.type === 'negative' && insight.pattern === key) {
+                    return { avoid: true, reason: insight.message };
+                }
+            }
+            return { avoid: false, reason: null };
+        }
+
+        // =====================================================
+        // ANALYZE ASSET
+        // =====================================================
+
+        function analyzeAsset(data, historical) {
+            const { price, high24h, low24h, change24h, volume } = data;
+            const volatility = ((high24h - low24h) / low24h) * 100;
+
+            let indicators = { rsi: 50, stoch: 50, macd: 'neutral', bb: 50 };
+
+            if (historical && historical.closes.length > 50) {
+                const { closes, highs, lows } = historical;
+                indicators.rsi = calculateRSI(closes);
+                indicators.stoch = calculateStochastic(closes, highs, lows);
+                indicators.macd = calculateMACD(closes).trend;
+                indicators.bb = calculateBB(closes).position;
+            }
+
+            let score = 0, longSignals = 0, shortSignals = 0;
+
+            if (indicators.rsi < 30) { score += 15; longSignals++; }
+            else if (indicators.rsi > 70) { score += 15; shortSignals++; }
+            else score += 5;
+
+            if (indicators.stoch < 20) { score += 12; longSignals++; }
+            else if (indicators.stoch > 80) { score += 12; shortSignals++; }
+            else score += 4;
+
+            if (indicators.macd === 'bullish') { score += 12; longSignals++; }
+            else if (indicators.macd === 'bearish') { score += 12; shortSignals++; }
+            else score += 4;
+
+            if (indicators.bb < 10) { score += 15; longSignals++; }
+            else if (indicators.bb > 90) { score += 15; shortSignals++; }
+            else score += 5;
+
+            if (historical && historical.closes.length > 21) {
+                const ema9 = calculateEMA(historical.closes, 9);
+                const ema21 = calculateEMA(historical.closes, 21);
+                if (ema9 > ema21) { score += 10; longSignals++; }
+                else { score += 10; shortSignals++; }
+            }
+
+            let action = 'OBSERVAR';
+            if (longSignals > shortSignals && longSignals >= 3) action = 'LONG';
+            else if (shortSignals > longSignals && shortSignals >= 3) action = 'SHORT';
+
+            return {
+                symbol: data.symbol,
+                price, high24h, low24h, change24h, volatility, volume,
+                score: Math.min(100, score),
+                action,
+                indicators,
+                confluence: { long: longSignals, short: shortSignals }
+            };
+        }
+
+        // =====================================================
+        // MAIN TRADING LOOP
+        // =====================================================
+
+        async function tradingLoop() {
+            if (!state.isRunning) return;
+
+            // Check cooldown
+            if (isCooldownActive()) {
+                setTimeout(tradingLoop, 5000);
+                return;
+            }
+
+            try {
+                // 1. Fetch market data
+                const marketData = await fetchBinanceData();
+                if (marketData.length === 0) {
+                    setTimeout(tradingLoop, CONFIG.updateInterval);
+                    return;
+                }
+
+                // 2. Get historical data & analyze
+                const opportunities = [];
+                for (const asset of marketData) {
+                    if (!state.historicalData[asset.symbol]) {
+                        state.historicalData[asset.symbol] = await fetchHistoricalData(asset.symbol);
+                    }
+
+                    const analysis = analyzeAsset(asset, state.historicalData[asset.symbol]);
+                    if (analysis.score >= 30) {
+                        opportunities.push(analysis);
+                    }
+                }
+
+                // Sort by score
+                opportunities.sort((a, b) => b.score - a.score);
+                renderOpportunities(opportunities);
+
+                // 3. Update existing trades
+                await updateActiveTrades(marketData);
+
+                // 4. Ask AI for decisions (using AI mode settings)
+                const modeConfig = getAIModeConfig();
+                const goodOpps = opportunities.filter(o => {
+                    // En modo agresivo, aceptar score >= 30 y permitir OBSERVAR
+                    if (CONFIG.currentAIMode === 'aggressive') {
+                        return o.score >= modeConfig.minScore;
+                    }
+                    // En otros modos, respetar score y no permitir OBSERVAR
+                    return o.score >= modeConfig.minScore && o.action !== 'OBSERVAR';
+                });
+
+                // En modo agresivo, SIEMPRE consultar a la IA si hay oportunidades
+                const shouldConsultAI = CONFIG.currentAIMode === 'aggressive'
+                    ? opportunities.length > 0
+                    : goodOpps.length > 0;
+
+                if (state.aiConnected && shouldConsultAI) {
+                    const oppsToAnalyze = CONFIG.currentAIMode === 'aggressive'
+                        ? opportunities.slice(0, 8)  // Mas oportunidades en modo agresivo
+                        : goodOpps;
+                    const aiDecisions = await askAIForDecision(oppsToAnalyze);
+
+                    // 5. Execute trades based on AI + filters
+                    for (const decision of aiDecisions) {
+                        if (decision.action === 'SKIP') continue;
+
+                        const minConf = parseInt(document.getElementById('minConfidence').value);
+                        if (decision.confidence < minConf) continue;
+
+                        // Check all filters
+                        const trendCheck = passesTrendFilter(decision.action);
+                        if (!trendCheck.pass) {
+                            state.tradesBlocked++;
+                            document.getElementById('tradesBlocked').textContent = state.tradesBlocked;
+                            showToast(`Bloqueado: ${trendCheck.reason}`, 'warning');
+                            continue;
+                        }
+
+                        const opp = opportunities.find(o => o.symbol === decision.symbol);
+                        if (opp) {
+                            const volumeCheck = passesVolumeFilter(opp.symbol, opp.volume);
+                            if (!volumeCheck.pass) {
+                                state.tradesBlocked++;
+                                document.getElementById('tradesBlocked').textContent = state.tradesBlocked;
+                                showToast(`Bloqueado: ${volumeCheck.reason}`, 'warning');
+                                continue;
+                            }
+                        }
+
+                        const horariosCheck = passesHorariosFilter();
+                        if (!horariosCheck.pass) {
+                            state.tradesBlocked++;
+                            document.getElementById('tradesBlocked').textContent = state.tradesBlocked;
+                            showToast(`Bloqueado: ${horariosCheck.reason}`, 'warning');
+                            continue;
+                        }
+
+                        // All checks passed - execute trade
+                        if (opp) {
+                            await executeTrade(opp, decision);
+                        }
+                    }
+                }
+
+            } catch (error) {
+                console.error('Trading loop error:', error);
+            }
+
+            setTimeout(tradingLoop, CONFIG.updateInterval);
+        }
+
+        async function updateActiveTrades(marketData) {
+            for (let i = state.activeTrades.length - 1; i >= 0; i--) {
+                const trade = state.activeTrades[i];
+                const currentData = marketData.find(m => m.symbol === trade.symbol);
+                if (!currentData) continue;
+
+                const currentPrice = currentData.price;
+
+                // Check break-even
+                checkBreakeven(trade, currentPrice);
+
+                // Check partial TP
+                checkPartialTP(trade, currentPrice);
+
+                // Check trailing stop
+                checkTrailingStop(trade, currentPrice);
+
+                // Calculate current P&L
+                let pnl;
+                if (trade.action === 'LONG') {
+                    pnl = (currentPrice - trade.entryPrice) * trade.quantity;
+                } else {
+                    pnl = (trade.entryPrice - currentPrice) * trade.quantity;
+                }
+
+                trade.currentPrice = currentPrice;
+                trade.currentPnL = pnl;
+
+                // Check TP/SL
+                let shouldClose = false;
+                let closeReason = '';
+
+                if (trade.action === 'LONG') {
+                    if (currentPrice >= trade.takeProfit) {
+                        shouldClose = true;
+                        closeReason = 'Take Profit';
+                    } else if (currentPrice <= trade.stopLoss) {
+                        shouldClose = true;
+                        closeReason = trade.trailingStopActivated ? 'Trailing Stop' : (trade.breakevenActivated ? 'Break-even' : 'Stop Loss');
+                    }
+                } else {
+                    if (currentPrice <= trade.takeProfit) {
+                        shouldClose = true;
+                        closeReason = 'Take Profit';
+                    } else if (currentPrice >= trade.stopLoss) {
+                        shouldClose = true;
+                        closeReason = trade.trailingStopActivated ? 'Trailing Stop' : (trade.breakevenActivated ? 'Break-even' : 'Stop Loss');
+                    }
+                }
+
+                if (shouldClose) {
+                    closeTrade(trade, currentPrice, closeReason);
+                }
+            }
+
+            renderTrades();
+            updateStats();
+            updateBalance();
+        }
+
+        async function executeTrade(opp, decision) {
+            if (state.activeTrades.length >= CONFIG.maxTrades) return;
+            if (state.activeTrades.find(t => t.symbol === opp.symbol)) return;
+
+            // Position Sizing Dinamico (Kelly Criterion)
+            const dynamicPercent = calculatePositionSize();
+            const tradePercent = dynamicPercent / 100;
+            const amount = state.currentBalance * tradePercent;
+
+            // Get dynamic TP/SL
+            const { tp, sl } = getDynamicTPSL(opp.symbol, opp.price, decision.action);
+
+            const trade = {
+                id: Date.now(),
+                symbol: opp.symbol,
+                action: decision.action,
+                entryPrice: opp.price,
+                currentPrice: opp.price,
+                amount: amount,
+                quantity: amount / opp.price,
+                takeProfit: decision.action === 'LONG'
+                    ? opp.price * (1 + tp / 100)
+                    : opp.price * (1 - tp / 100),
+                stopLoss: decision.action === 'LONG'
+                    ? opp.price * (1 - sl / 100)
+                    : opp.price * (1 + sl / 100),
+                confidence: decision.confidence,
+                reasoning: decision.reasoning,
+                openTime: Date.now(),
+                currentPnL: 0,
+                breakevenActivated: false,
+                partialTPTaken: false,
+                partialPnL: 0,
+                trailingStopActivated: false,
+                highestPrice: opp.price,
+                lowestPrice: opp.price,
+                tpPercent: tp,
+                slPercent: sl,
+                positionSizePercent: dynamicPercent
+            };
+
+            state.activeTrades.push(trade);
+            state.currentBalance -= amount;
+
+            renderTrades();
+            updateBalance();
+            updateStats();
+            showToast(`Trade abierto: ${trade.symbol} ${trade.action}`, 'success');
+            saveToLocal();
+        }
+
+        function closeTrade(trade, closePrice, reason) {
+            const index = state.activeTrades.findIndex(t => t.id === trade.id);
+            if (index === -1) return;
+
+            let pnl;
+            if (trade.action === 'LONG') {
+                pnl = (closePrice - trade.entryPrice) * trade.quantity;
+            } else {
+                pnl = (trade.entryPrice - closePrice) * trade.quantity;
+            }
+
+            // Add partial PnL if any
+            pnl += trade.partialPnL || 0;
+
+            const closedTrade = {
+                ...trade,
+                closePrice,
+                pnl,
+                closeTime: Date.now(),
+                closeReason: reason
+            };
+
+            state.tradeHistory.unshift(closedTrade);
+            state.activeTrades.splice(index, 1);
+            state.currentBalance += trade.amount + pnl;
+
+            // Activate cooldown if loss
+            if (pnl < 0) {
+                activateCooldown();
+            }
+
+            renderTrades();
+            renderHistory();
+            updateBalance();
+            updateStats();
+
+            const emoji = pnl >= 0 ? '✅' : '❌';
+            showToast(`${emoji} ${trade.symbol}: ${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)} (${reason})`, pnl >= 0 ? 'success' : 'error');
+            saveToLocal();
+        }
+
+        // =====================================================
+        // UI RENDERING
+        // =====================================================
+
+        function renderTrades() {
+            const container = document.getElementById('tradesContainer');
+
+            if (state.activeTrades.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-trades">
+                        <div class="icon">🛡️</div>
+                        <div class="title">V8 con Protecciones Avanzadas</div>
+                        <div class="desc">Break-Even, Partial TP, Filtros de Tendencia y Volumen</div>
+                    </div>
+                `;
+                document.getElementById('tradesCountBadge').textContent = '0';
+                return;
+            }
+
+            container.innerHTML = state.activeTrades.map(t => {
+                const pnlClass = t.currentPnL >= 0 ? 'positive' : 'negative';
+                const pnlPercent = ((t.currentPnL / t.amount) * 100).toFixed(2);
+
+                return `
+                    <div class="trade-card ${t.action.toLowerCase()}">
+                        <div class="trade-header">
+                            <span class="trade-symbol">${t.symbol}</span>
+                            <span class="trade-action ${t.action.toLowerCase()}">${t.action} ${t.confidence}%</span>
+                        </div>
+                        <div class="trade-details">
+                            <span>Entrada: $${t.entryPrice.toFixed(2)}</span>
+                            <span>Actual: $${t.currentPrice.toFixed(2)}</span>
+                            <span>TP: $${t.takeProfit.toFixed(2)} (+${t.tpPercent.toFixed(1)}%)</span>
+                            <span>SL: $${t.stopLoss.toFixed(2)} (-${t.slPercent.toFixed(1)}%)</span>
+                        </div>
+                        <div class="trade-protection">
+                            ${t.breakevenActivated ? '<span class="protection-badge be-active">BE Activo</span>' : ''}
+                            ${t.partialTPTaken ? `<span class="protection-badge partial">TP1: +$${t.partialPnL.toFixed(2)}</span>` : ''}
+                            ${t.trailingStopActivated ? '<span class="protection-badge trailing">Trail Activo</span>' : ''}
+                            <span class="protection-badge size">Size: ${t.positionSizePercent?.toFixed(1) || '?'}%</span>
+                        </div>
+                        <div class="trade-pnl">
+                            <span>P&L</span>
+                            <span class="pnl-value ${pnlClass}">${t.currentPnL >= 0 ? '+' : ''}$${t.currentPnL.toFixed(2)} (${pnlPercent}%)</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('tradesCountBadge').textContent = state.activeTrades.length;
+        }
+
+        function renderOpportunities(opportunities) {
+            const container = document.getElementById('oppsContainer');
+
+            if (opportunities.length === 0) {
+                container.innerHTML = '<div style="padding: 15px; text-align: center; color: var(--text-secondary);">Sin oportunidades</div>';
+                document.getElementById('oppsCountBadge').textContent = '0';
+                return;
+            }
+
+            container.innerHTML = opportunities.slice(0, 8).map(o => {
+                const scoreClass = o.score >= 70 ? 'high' : o.score >= 50 ? 'medium' : 'low';
+
+                // Check filters
+                const trendCheck = passesTrendFilter(o.action);
+                const volumeCheck = passesVolumeFilter(o.symbol, o.volume);
+                const horariosCheck = passesHorariosFilter();
+                const isFiltered = !trendCheck.pass || !volumeCheck.pass || !horariosCheck.pass;
+                const filterReason = !trendCheck.pass ? trendCheck.reason : !volumeCheck.pass ? volumeCheck.reason : horariosCheck.reason;
+
+                return `
+                    <div class="opp-card ${isFiltered ? 'filtered' : ''}">
+                        <div class="opp-header">
+                            <span class="opp-symbol">${o.symbol}</span>
+                            <span class="opp-score ${scoreClass}">${o.score}/100</span>
+                        </div>
+                        <div class="opp-indicators">
+                            <span class="opp-indicator ${o.indicators.rsi < 40 ? 'bullish' : o.indicators.rsi > 60 ? 'bearish' : ''}">RSI: ${o.indicators.rsi.toFixed(0)}</span>
+                            <span class="opp-indicator ${o.indicators.macd === 'bullish' ? 'bullish' : 'bearish'}">MACD: ${o.indicators.macd}</span>
+                            <span class="opp-indicator">${o.action}</span>
+                        </div>
+                        ${isFiltered ? `<div class="opp-filter-reason">🛡️ ${filterReason}</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('oppsCountBadge').textContent = opportunities.length;
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('historyContainer');
+
+            if (state.tradeHistory.length === 0) {
+                container.innerHTML = '<div style="padding: 15px; text-align: center; color: var(--text-secondary);">Sin historial</div>';
+                return;
+            }
+
+            container.innerHTML = state.tradeHistory.slice(0, 15).map(t => `
+                <div class="history-item">
+                    <span>${t.symbol} <span style="color: ${t.action === 'LONG' ? 'var(--green-light)' : 'var(--red-light)'}">${t.action}</span></span>
+                    <span class="history-result ${t.pnl >= 0 ? 'win' : 'loss'}">
+                        ${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function updateStats() {
+            const total = state.tradeHistory.length;
+            const wins = state.tradeHistory.filter(t => t.pnl > 0).length;
+            const profit = state.tradeHistory.reduce((s, t) => s + t.pnl, 0);
+            const invested = state.activeTrades.reduce((s, t) => s + t.amount, 0);
+
+            document.getElementById('totalTrades').textContent = total;
+            document.getElementById('winRate').textContent = total > 0 ? `${Math.round(wins / total * 100)}%` : '0%';
+            document.getElementById('totalProfit').textContent = `$${profit.toFixed(0)}`;
+            document.getElementById('totalProfit').className = `value ${profit >= 0 ? 'positive' : 'negative'}`;
+            document.getElementById('investedAmount').textContent = `$${invested.toFixed(0)}`;
+        }
+
+        function updateBalance() {
+            const change = state.currentBalance - state.initialBalance;
+            const pct = (change / state.initialBalance * 100).toFixed(2);
+
+            document.getElementById('currentBalance').textContent = `$${state.currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+            document.getElementById('balanceChange').textContent = `${change >= 0 ? '+' : ''}$${change.toFixed(2)} (${pct}%)`;
+            document.getElementById('balanceChange').className = `change ${change >= 0 ? 'positive' : 'negative'}`;
+        }
+
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = msg;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        }
+
+        // =====================================================
+        // CONTROLS
+        // =====================================================
+
+        async function toggleAI() {
+            if (!state.isRunning) {
+                if (!state.aiConnected) {
+                    const connected = await testAIConnection();
+                    if (!connected) return;
+                }
+
+                state.isRunning = true;
+                document.getElementById('btnStart').textContent = '⏹️ Detener';
+                document.getElementById('botStatus').className = 'status-dot green';
+                document.getElementById('botStatusText').textContent = 'Bot: ON';
+                showToast('Bot V8 iniciado con protecciones activas', 'success');
+                tradingLoop();
+            } else {
+                state.isRunning = false;
+                document.getElementById('btnStart').textContent = '🚀 Iniciar IA';
+                document.getElementById('botStatus').className = 'status-dot yellow';
+                document.getElementById('botStatusText').textContent = 'Bot: OFF';
+                showToast('Bot detenido', 'info');
+            }
+        }
+
+        function resetSystem() {
+            if (!confirm('¿Resetear todo el sistema?')) return;
+
+            state = {
+                aiProvider: state.aiProvider,
+                aiConnected: false,
+                isRunning: false,
+                currentBalance: 10000,
+                initialBalance: 10000,
+                activeTrades: [],
+                tradeHistory: [],
+                aiCalls: 0,
+                tradesBlocked: 0,
+                historicalData: {},
+                btcTrend: { trend: 'neutral', strength: 0 },
+                lastLossTime: null,
+                updateTimer: null,
+                cooldownTimer: null
+            };
+
+            localStorage.removeItem('tradingStateV8');
+            location.reload();
+        }
+
+        function updateSlider(id) {
+            const value = document.getElementById(id).value;
+            if (id === 'minConfidence') {
+                document.getElementById('minConfidenceValue').textContent = value + '%';
+            } else if (id === 'tradePercent') {
+                document.getElementById('tradePercentValue').textContent = value + '%';
+            } else if (id === 'cooldownMin') {
+                document.getElementById('cooldownMinValue').textContent = value;
+                CONFIG.protections.cooldown.durationMinutes = parseInt(value);
+            }
+            saveToLocal();
+        }
+
+        // =====================================================
+        // PERSISTENCE (Local + Firebase)
+        // =====================================================
+
+        function saveToLocal() {
+            const config = {
+                currentBalance: state.currentBalance,
+                initialBalance: state.initialBalance,
+                activeTrades: state.activeTrades,
+                tradeHistory: state.tradeHistory,
+                aiProvider: state.aiProvider,
+                aiCalls: state.aiCalls,
+                tradesBlocked: state.tradesBlocked,
+                protections: CONFIG.protections,
+                firebaseUrl: state.firebaseUrl,
+                userName: state.userName
+            };
+            localStorage.setItem('tradingStateV8', JSON.stringify(config));
+
+            // Sync to Firebase if configured
+            syncToFirebase();
+        }
+
+        function loadFromLocal() {
+            const saved = localStorage.getItem('tradingStateV8');
+            if (saved) {
+                try {
+                    const config = JSON.parse(saved);
+                    state.currentBalance = config.currentBalance || 10000;
+                    state.initialBalance = config.initialBalance || 10000;
+                    state.activeTrades = config.activeTrades || [];
+                    state.tradeHistory = config.tradeHistory || [];
+                    state.aiProvider = config.aiProvider || 'groq';
+                    state.aiCalls = config.aiCalls || 0;
+                    state.tradesBlocked = config.tradesBlocked || 0;
+                    state.firebaseUrl = config.firebaseUrl || null;
+                    state.userName = config.userName || 'Usuario';
+
+                    if (config.protections) {
+                        Object.assign(CONFIG.protections, config.protections);
+                    }
+
+                    selectAI(state.aiProvider);
+                    renderTrades();
+                    renderHistory();
+                    updateBalance();
+                    updateStats();
+                    updateProtectionIndicators();
+
+                    // Update toggles
+                    for (const [key, val] of Object.entries(CONFIG.protections)) {
+                        const toggle = document.getElementById(`toggle${key.charAt(0).toUpperCase() + key.slice(1)}`);
+                        if (toggle) {
+                            toggle.classList.toggle('active', val.enabled);
+                        }
+                    }
+
+                } catch (e) {
+                    console.error('Error loading saved state:', e);
+                }
+            }
+        }
+
+        // =====================================================
+        // FIREBASE SYNC
+        // =====================================================
+
+        async function syncToFirebase() {
+            if (!state.firebaseUrl || !state.userName) return;
+
+            const data = {
+                balance: state.currentBalance,
+                initialBalance: state.initialBalance,
+                activeTrades: state.activeTrades,
+                tradeHistory: state.tradeHistory.slice(0, 100), // Ultimos 100
+                aiCalls: state.aiCalls,
+                tradesBlocked: state.tradesBlocked,
+                lastUpdate: new Date().toISOString(),
+                stats: {
+                    totalTrades: state.tradeHistory.length,
+                    winRate: state.tradeHistory.length > 0
+                        ? (state.tradeHistory.filter(t => t.pnl > 0).length / state.tradeHistory.length * 100).toFixed(1)
+                        : 0,
+                    totalProfit: state.tradeHistory.reduce((s, t) => s + t.pnl, 0).toFixed(2)
+                }
+            };
+
+            try {
+                const url = `${state.firebaseUrl.replace(/\/$/, '')}/users/${state.userName}.json`;
+                await fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                console.log('Firebase sync OK');
+            } catch (e) {
+                console.error('Firebase sync error:', e);
+            }
+        }
+
+        async function loadFromFirebase() {
+            if (!state.firebaseUrl || !state.userName) return false;
+
+            try {
+                const url = `${state.firebaseUrl.replace(/\/$/, '')}/users/${state.userName}.json`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data) {
+                    state.currentBalance = data.balance || state.currentBalance;
+                    state.initialBalance = data.initialBalance || state.initialBalance;
+                    state.activeTrades = data.activeTrades || [];
+                    state.tradeHistory = data.tradeHistory || [];
+                    state.aiCalls = data.aiCalls || 0;
+                    state.tradesBlocked = data.tradesBlocked || 0;
+
+                    renderTrades();
+                    renderHistory();
+                    updateBalance();
+                    updateStats();
+
+                    showToast('Datos cargados desde Firebase', 'success');
+                    return true;
+                }
+            } catch (e) {
+                console.error('Firebase load error:', e);
+            }
+            return false;
+        }
+
+        // =====================================================
+        // CONFIG MODAL
+        // =====================================================
+
+        function showConfigModal() {
+            document.getElementById('firebaseUrl').value = state.firebaseUrl || '';
+            document.getElementById('userName').value = state.userName || '';
+            document.getElementById('initialBalanceInput').value = state.initialBalance || 10000;
+            document.getElementById('configModal').classList.add('active');
+        }
+
+        function closeConfigModal() {
+            document.getElementById('configModal').classList.remove('active');
+        }
+
+        async function saveFirebaseConfig() {
+            state.firebaseUrl = document.getElementById('firebaseUrl').value.trim();
+            state.userName = document.getElementById('userName').value.trim() || 'Usuario';
+
+            const newInitialBalance = parseFloat(document.getElementById('initialBalanceInput').value) || 10000;
+
+            // Si cambio el balance inicial, resetear
+            if (newInitialBalance !== state.initialBalance && state.tradeHistory.length === 0) {
+                state.initialBalance = newInitialBalance;
+                state.currentBalance = newInitialBalance;
+            }
+
+            saveToLocal();
+            closeConfigModal();
+
+            // Intentar cargar datos de Firebase
+            if (state.firebaseUrl) {
+                const loaded = await loadFromFirebase();
+                if (!loaded) {
+                    // Si no hay datos, hacer primer sync
+                    await syncToFirebase();
+                }
+            }
+
+            showToast('Configuracion guardada', 'success');
+        }
+
+        // Close modal on click outside
+        document.getElementById('configModal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'configModal') {
+                closeConfigModal();
+            }
+        });
+
+        // =====================================================
+        // INIT
+        // =====================================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFromLocal();
+            updateProtectionIndicators();
+            fetchBinanceData(); // Test API connection
+
+            document.getElementById('aiCalls').textContent = state.aiCalls;
+            document.getElementById('aiCallsTop').textContent = state.aiCalls;
+            document.getElementById('tradesBlocked').textContent = state.tradesBlocked;
+        });
+    </script>
+</body>
+</html>

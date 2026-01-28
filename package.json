@@ -1,0 +1,12 @@
+{
+  "name": "crypto-trading-bot",
+  "version": "1.0.0",
+  "description": "Crypto Trading Bot 24/7",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
