@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1446,7 +1447,10 @@
         <div class="panel main-panel">
             <div class="panel-header">
                 <div class="panel-title">🎯 TRADES ACTIVOS</div>
-                <div class="panel-badge" id="tradesCountBadge">0</div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div class="panel-badge" id="tradesCountBadge">0</div>
+                    <div id="investedBadge" style="font-size: 0.75rem; padding: 4px 10px; background: var(--bg-tertiary); border-radius: 8px; color: var(--cyan);">💰 $0</div>
+                </div>
             </div>
 
             <div class="balance-hero">
@@ -3106,12 +3110,16 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
         function renderTrades() {
             const container = document.getElementById('tradesContainer');
 
+            // V9: Calcular total invertido
+            const totalInvested = state.activeTrades.reduce((sum, t) => sum + t.amount, 0);
+            document.getElementById('investedBadge').textContent = `💰 $${totalInvested.toFixed(0)}`;
+
             if (state.activeTrades.length === 0) {
                 container.innerHTML = `
                     <div class="empty-trades">
                         <div class="icon">🛡️</div>
-                        <div class="title">V8 con Protecciones Avanzadas</div>
-                        <div class="desc">Break-Even, Partial TP, Filtros de Tendencia y Volumen</div>
+                        <div class="title">V9 Multi-Estrategia</div>
+                        <div class="desc">Scalping, Swing, MeanRev con protecciones avanzadas</div>
                     </div>
                 `;
                 document.getElementById('tradesCountBadge').textContent = '0';
@@ -3131,7 +3139,7 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
                 return `
                     <div class="trade-card ${t.action.toLowerCase()}">
                         <div class="trade-header">
-                            <span class="trade-symbol">${t.symbol}</span>
+                            <span class="trade-symbol">${t.symbol} <span style="color: var(--cyan); font-size: 0.75rem; font-weight: 400;">💰$${t.amount.toFixed(0)}</span></span>
                             <span class="trade-action ${t.action.toLowerCase()}">${t.action} ${t.confidence}%</span>
                         </div>
                         <div class="trade-details">
@@ -3265,6 +3273,219 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
         }
 
         // =====================================================
+        // SESSION SUMMARY V9
+        // =====================================================
+
+        async function showSessionSummary() {
+            const history = state.tradeHistory;
+            if (history.length === 0) {
+                showToast('No hay trades en esta sesión', 'info');
+                return;
+            }
+
+            const wins = history.filter(t => t.pnl > 0);
+            const losses = history.filter(t => t.pnl <= 0);
+            const totalPnL = history.reduce((sum, t) => sum + t.pnl, 0);
+            const winRate = ((wins.length / history.length) * 100).toFixed(1);
+
+            const bestTrade = history.reduce((best, t) => t.pnl > best.pnl ? t : best, history[0]);
+            const worstTrade = history.reduce((worst, t) => t.pnl < worst.pnl ? t : worst, history[0]);
+
+            // Estadísticas por dirección
+            const longs = history.filter(t => t.action === 'LONG');
+            const shorts = history.filter(t => t.action === 'SHORT');
+            const longWinRate = longs.length > 0 ? (longs.filter(t => t.pnl > 0).length / longs.length * 100).toFixed(0) : 0;
+            const shortWinRate = shorts.length > 0 ? (shorts.filter(t => t.pnl > 0).length / shorts.length * 100).toFixed(0) : 0;
+
+            // Estadísticas por moneda
+            const bySymbol = {};
+            history.forEach(t => {
+                if (!bySymbol[t.symbol]) bySymbol[t.symbol] = { pnl: 0, count: 0, wins: 0 };
+                bySymbol[t.symbol].pnl += t.pnl;
+                bySymbol[t.symbol].count++;
+                if (t.pnl > 0) bySymbol[t.symbol].wins++;
+            });
+
+            const symbolStats = Object.entries(bySymbol)
+                .map(([symbol, data]) => ({ symbol, ...data, winRate: (data.wins / data.count * 100).toFixed(0) }))
+                .sort((a, b) => b.pnl - a.pnl);
+
+            // Calcular tiempo activo
+            const sessionStart = state.sessionStartTime || Date.now();
+            const sessionDuration = Date.now() - sessionStart;
+            const hours = Math.floor(sessionDuration / 3600000);
+            const minutes = Math.floor((sessionDuration % 3600000) / 60000);
+            const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+            // Crear modal
+            const modal = document.createElement('div');
+            modal.id = 'sessionSummaryModal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                overflow-y: auto;
+                padding: 20px;
+            `;
+
+            const pnlColor = totalPnL >= 0 ? 'var(--green-light)' : 'var(--red-light)';
+            const pnlEmoji = totalPnL >= 0 ? '🎉' : '😔';
+
+            modal.innerHTML = `
+                <div style="
+                    background: var(--bg-secondary);
+                    border: 2px solid ${totalPnL >= 0 ? 'var(--green)' : 'var(--red)'};
+                    border-radius: 16px;
+                    padding: 30px;
+                    max-width: 500px;
+                    width: 90%;
+                    text-align: center;
+                    max-height: 90vh;
+                    overflow-y: auto;
+                ">
+                    <h2 style="margin-bottom: 20px; font-size: 1.5rem;">
+                        ${pnlEmoji} Resumen de Sesión
+                    </h2>
+
+                    <div style="
+                        font-size: 2.5rem;
+                        font-weight: 700;
+                        color: ${pnlColor};
+                        margin-bottom: 20px;
+                    ">
+                        ${totalPnL >= 0 ? '+' : ''}$${totalPnL.toFixed(2)}
+                    </div>
+
+                    <div style="
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 15px;
+                        margin-bottom: 20px;
+                        text-align: left;
+                    ">
+                        <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px;">
+                            <div style="color: var(--text-secondary); font-size: 0.8rem;">📊 Total Trades</div>
+                            <div style="font-size: 1.2rem; font-weight: 600;">${history.length}</div>
+                        </div>
+                        <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px;">
+                            <div style="color: var(--text-secondary); font-size: 0.8rem;">📈 Win Rate</div>
+                            <div style="font-size: 1.2rem; font-weight: 600;">${winRate}%</div>
+                        </div>
+                        <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px;">
+                            <div style="color: var(--text-secondary); font-size: 0.8rem;">✅ Ganados</div>
+                            <div style="font-size: 1.2rem; font-weight: 600; color: var(--green-light);">${wins.length}</div>
+                        </div>
+                        <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px;">
+                            <div style="color: var(--text-secondary); font-size: 0.8rem;">❌ Perdidos</div>
+                            <div style="font-size: 1.2rem; font-weight: 600; color: var(--red-light);">${losses.length}</div>
+                        </div>
+                    </div>
+
+                    <div style="
+                        background: var(--bg-tertiary);
+                        padding: 12px;
+                        border-radius: 8px;
+                        margin-bottom: 15px;
+                        text-align: left;
+                    ">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="color: var(--text-secondary);">🏆 Mejor trade:</span>
+                            <span style="color: var(--green-light);">${bestTrade.symbol} +$${bestTrade.pnl.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: var(--text-secondary);">💀 Peor trade:</span>
+                            <span style="color: var(--red-light);">${worstTrade.symbol} $${worstTrade.pnl.toFixed(2)}</span>
+                        </div>
+                    </div>
+
+                    <div style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 20px;">
+                        ⏱️ Tiempo activo: ${timeStr}
+                    </div>
+
+                    <!-- AI Analysis Section -->
+                    <div id="aiAnalysisSection" style="
+                        background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(163, 113, 247, 0.1));
+                        border: 1px solid var(--purple);
+                        border-radius: 12px;
+                        padding: 15px;
+                        margin-bottom: 20px;
+                        text-align: left;
+                    ">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span style="font-size: 1.2rem;">🤖</span>
+                            <span style="font-weight: 600; background: linear-gradient(135deg, #f97316, #a371f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Análisis IA</span>
+                        </div>
+                        <div id="aiAnalysisContent" style="color: var(--text-primary); font-size: 0.9rem; line-height: 1.5;">
+                            <div style="display: flex; align-items: center; gap: 10px; color: var(--text-secondary);">
+                                <div class="loading-spinner" style="width: 16px; height: 16px; border: 2px solid var(--purple); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                                Analizando tu sesión...
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="document.getElementById('sessionSummaryModal').remove()" style="
+                        background: var(--blue);
+                        color: white;
+                        border: none;
+                        padding: 12px 30px;
+                        border-radius: 8px;
+                        font-size: 1rem;
+                        cursor: pointer;
+                    ">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+            // Llamar a la IA para análisis
+            if (state.aiConnected) {
+                try {
+                    const prompt = `Eres un experto en trading de crypto. Analiza estos resultados de trading y da consejos CONCRETOS y ACCIONABLES en español. Sé directo y breve (máximo 4-5 puntos).
+
+DATOS DE LA SESIÓN:
+- Total trades: ${history.length}
+- Ganados: ${wins.length} | Perdidos: ${losses.length}
+- Win Rate: ${winRate}%
+- P&L Total: $${totalPnL.toFixed(2)}
+- Mejor trade: ${bestTrade.symbol} +$${bestTrade.pnl.toFixed(2)}
+- Peor trade: ${worstTrade.symbol} $${worstTrade.pnl.toFixed(2)}
+
+ESTADÍSTICAS POR DIRECCIÓN:
+- LONGs: ${longs.length} trades, ${longWinRate}% win rate
+- SHORTs: ${shorts.length} trades, ${shortWinRate}% win rate
+
+RENDIMIENTO POR MONEDA:
+${symbolStats.slice(0, 5).map(s => `- ${s.symbol}: $${s.pnl.toFixed(2)} (${s.count} trades, ${s.winRate}% WR)`).join('\n')}
+
+Responde con:
+1. 📊 Evaluación general (1 línea)
+2. ✅ Qué está funcionando bien
+3. ⚠️ Qué mejorar
+4. 💡 Recomendación principal para la próxima sesión
+
+NO uses markdown, solo texto plano con emojis.`;
+
+                    const aiResponse = await callAI(prompt);
+                    document.getElementById('aiAnalysisContent').innerHTML = aiResponse.replace(/\n/g, '<br>');
+                } catch (error) {
+                    document.getElementById('aiAnalysisContent').innerHTML = `<span style="color: var(--red-light);">Error al analizar: ${error.message}</span>`;
+                }
+            } else {
+                document.getElementById('aiAnalysisContent').innerHTML = `<span style="color: var(--text-secondary);">Conectá la IA para obtener análisis personalizado de tus trades.</span>`;
+            }
+        }
+
+        // =====================================================
         // CONTROLS
         // =====================================================
 
@@ -3276,17 +3497,20 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
                 }
 
                 state.isRunning = true;
+                state.sessionStartTime = Date.now();
                 document.getElementById('btnStart').textContent = '⏹️ Detener';
                 document.getElementById('botStatus').className = 'status-dot green';
                 document.getElementById('botStatusText').textContent = 'Bot: ON';
-                showToast('Bot V8 iniciado con protecciones activas', 'success');
+                showToast('Bot V9 Multi-Estrategia iniciado', 'success');
                 tradingLoop();
             } else {
                 state.isRunning = false;
                 document.getElementById('btnStart').textContent = '🚀 Iniciar IA';
                 document.getElementById('botStatus').className = 'status-dot yellow';
                 document.getElementById('botStatusText').textContent = 'Bot: OFF';
-                showToast('Bot detenido', 'info');
+
+                // V9: Mostrar resumen de sesión
+                showSessionSummary();
             }
         }
 
