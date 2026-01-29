@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1292,6 +1291,7 @@
             </div>
 
             <button class="btn btn-ai" id="btnStart" onclick="toggleAI()">🚀 Iniciar IA</button>
+            <button class="btn btn-outline" onclick="generateFullReport()">📊 Resumen</button>
             <button class="btn btn-outline" onclick="resetSystem()">🗑️ Reset</button>
 
             <!-- NUEVO V9: Strategy Selector -->
@@ -3486,6 +3486,259 @@ NO uses markdown, solo texto plano con emojis.`;
         }
 
         // =====================================================
+        // FULL REPORT V9 (Historial + Activos)
+        // =====================================================
+
+        async function generateFullReport() {
+            const history = state.tradeHistory;
+            const active = state.activeTrades;
+
+            if (history.length === 0 && active.length === 0) {
+                showToast('No hay trades para analizar', 'info');
+                return;
+            }
+
+            // Stats del historial
+            const wins = history.filter(t => t.pnl > 0);
+            const losses = history.filter(t => t.pnl <= 0);
+            const closedPnL = history.reduce((sum, t) => sum + t.pnl, 0);
+            const winRate = history.length > 0 ? ((wins.length / history.length) * 100).toFixed(1) : 0;
+
+            // Stats de trades activos
+            const activePnL = active.reduce((sum, t) => sum + t.currentPnL + (t.partialPnL || 0), 0);
+            const totalInvested = active.reduce((sum, t) => sum + t.amount, 0);
+
+            // Total combinado
+            const totalPnL = closedPnL + activePnL;
+
+            // Mejor y peor trade (del historial)
+            const bestTrade = history.length > 0 ? history.reduce((best, t) => t.pnl > best.pnl ? t : best, history[0]) : null;
+            const worstTrade = history.length > 0 ? history.reduce((worst, t) => t.pnl < worst.pnl ? t : worst, history[0]) : null;
+
+            // Estadísticas por dirección
+            const longs = history.filter(t => t.action === 'LONG');
+            const shorts = history.filter(t => t.action === 'SHORT');
+            const longWinRate = longs.length > 0 ? (longs.filter(t => t.pnl > 0).length / longs.length * 100).toFixed(0) : 0;
+            const shortWinRate = shorts.length > 0 ? (shorts.filter(t => t.pnl > 0).length / shorts.length * 100).toFixed(0) : 0;
+
+            // Estadísticas por moneda (historial)
+            const bySymbol = {};
+            history.forEach(t => {
+                if (!bySymbol[t.symbol]) bySymbol[t.symbol] = { pnl: 0, count: 0, wins: 0 };
+                bySymbol[t.symbol].pnl += t.pnl;
+                bySymbol[t.symbol].count++;
+                if (t.pnl > 0) bySymbol[t.symbol].wins++;
+            });
+
+            const symbolStats = Object.entries(bySymbol)
+                .map(([symbol, data]) => ({ symbol, ...data, winRate: (data.wins / data.count * 100).toFixed(0) }))
+                .sort((a, b) => b.pnl - a.pnl);
+
+            // Tiempo activo
+            const sessionStart = state.sessionStartTime || Date.now();
+            const sessionDuration = Date.now() - sessionStart;
+            const hours = Math.floor(sessionDuration / 3600000);
+            const minutes = Math.floor((sessionDuration % 3600000) / 60000);
+            const timeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+            // Crear modal
+            const modal = document.createElement('div');
+            modal.id = 'fullReportModal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.85);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                overflow-y: auto;
+                padding: 20px;
+            `;
+
+            const pnlColor = totalPnL >= 0 ? 'var(--green-light)' : 'var(--red-light)';
+            const pnlEmoji = totalPnL >= 0 ? '📈' : '📉';
+
+            modal.innerHTML = `
+                <div style="
+                    background: var(--bg-secondary);
+                    border: 2px solid var(--cyan);
+                    border-radius: 16px;
+                    padding: 25px;
+                    max-width: 550px;
+                    width: 95%;
+                    max-height: 90vh;
+                    overflow-y: auto;
+                ">
+                    <h2 style="text-align: center; margin-bottom: 20px; font-size: 1.4rem;">
+                        📊 Reporte Completo
+                    </h2>
+
+                    <!-- P&L Total -->
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 0.85rem; color: var(--text-secondary);">P&L Total (Cerrado + Activo)</div>
+                        <div style="font-size: 2.2rem; font-weight: 700; color: ${pnlColor};">
+                            ${pnlEmoji} ${totalPnL >= 0 ? '+' : ''}$${totalPnL.toFixed(2)}
+                        </div>
+                    </div>
+
+                    <!-- Stats Grid -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                        <div style="background: var(--bg-tertiary); padding: 10px; border-radius: 8px; text-align: center;">
+                            <div style="color: var(--text-secondary); font-size: 0.75rem;">Cerrado</div>
+                            <div style="font-size: 1.1rem; font-weight: 600; color: ${closedPnL >= 0 ? 'var(--green-light)' : 'var(--red-light)'};">${closedPnL >= 0 ? '+' : ''}$${closedPnL.toFixed(2)}</div>
+                        </div>
+                        <div style="background: var(--bg-tertiary); padding: 10px; border-radius: 8px; text-align: center;">
+                            <div style="color: var(--text-secondary); font-size: 0.75rem;">Corriendo</div>
+                            <div style="font-size: 1.1rem; font-weight: 600; color: ${activePnL >= 0 ? 'var(--green-light)' : 'var(--red-light)'};">${activePnL >= 0 ? '+' : ''}$${activePnL.toFixed(2)}</div>
+                        </div>
+                        <div style="background: var(--bg-tertiary); padding: 10px; border-radius: 8px; text-align: center;">
+                            <div style="color: var(--text-secondary); font-size: 0.75rem;">Invertido</div>
+                            <div style="font-size: 1.1rem; font-weight: 600; color: var(--cyan);">$${totalInvested.toFixed(0)}</div>
+                        </div>
+                    </div>
+
+                    <!-- Trades Activos -->
+                    ${active.length > 0 ? `
+                    <div style="background: var(--bg-tertiary); border-radius: 10px; padding: 12px; margin-bottom: 15px;">
+                        <div style="font-weight: 600; margin-bottom: 10px; color: var(--yellow);">🎯 Trades Activos (${active.length})</div>
+                        ${active.map(t => {
+                            const tPnL = t.currentPnL + (t.partialPnL || 0);
+                            const tColor = tPnL >= 0 ? 'var(--green-light)' : 'var(--red-light)';
+                            return `
+                            <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border-color);">
+                                <span>${t.symbol} <span style="color: var(--text-secondary); font-size: 0.8rem;">${t.action}</span> <span style="color: var(--cyan); font-size: 0.8rem;">$${t.amount.toFixed(0)}</span></span>
+                                <span style="color: ${tColor}; font-weight: 600;">${tPnL >= 0 ? '+' : ''}$${tPnL.toFixed(2)}</span>
+                            </div>`;
+                        }).join('')}
+                    </div>
+                    ` : ''}
+
+                    <!-- Historial Stats -->
+                    ${history.length > 0 ? `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div style="background: var(--bg-tertiary); padding: 10px; border-radius: 8px;">
+                            <div style="color: var(--text-secondary); font-size: 0.75rem;">📊 Trades Cerrados</div>
+                            <div style="font-size: 1.1rem; font-weight: 600;">${history.length}</div>
+                        </div>
+                        <div style="background: var(--bg-tertiary); padding: 10px; border-radius: 8px;">
+                            <div style="color: var(--text-secondary); font-size: 0.75rem;">📈 Win Rate</div>
+                            <div style="font-size: 1.1rem; font-weight: 600;">${winRate}%</div>
+                        </div>
+                        <div style="background: var(--bg-tertiary); padding: 10px; border-radius: 8px;">
+                            <div style="color: var(--text-secondary); font-size: 0.75rem;">✅ Ganados</div>
+                            <div style="font-size: 1.1rem; font-weight: 600; color: var(--green-light);">${wins.length}</div>
+                        </div>
+                        <div style="background: var(--bg-tertiary); padding: 10px; border-radius: 8px;">
+                            <div style="color: var(--text-secondary); font-size: 0.75rem;">❌ Perdidos</div>
+                            <div style="font-size: 1.1rem; font-weight: 600; color: var(--red-light);">${losses.length}</div>
+                        </div>
+                    </div>
+
+                    <div style="background: var(--bg-tertiary); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>🏆 Mejor:</span>
+                            <span style="color: var(--green-light);">${bestTrade.symbol} +$${bestTrade.pnl.toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>💀 Peor:</span>
+                            <span style="color: var(--red-light);">${worstTrade.symbol} $${worstTrade.pnl.toFixed(2)}</span>
+                        </div>
+                    </div>
+                    ` : '<div style="text-align: center; color: var(--text-secondary); margin-bottom: 15px;">Sin historial cerrado</div>'}
+
+                    <div style="text-align: center; color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 15px;">
+                        ⏱️ Tiempo: ${timeStr}
+                    </div>
+
+                    <!-- AI Analysis Section -->
+                    <div id="fullReportAI" style="
+                        background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(163, 113, 247, 0.1));
+                        border: 1px solid var(--purple);
+                        border-radius: 12px;
+                        padding: 15px;
+                        margin-bottom: 20px;
+                    ">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                            <span style="font-size: 1.2rem;">🤖</span>
+                            <span style="font-weight: 600; background: linear-gradient(135deg, #f97316, #a371f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Análisis IA</span>
+                        </div>
+                        <div id="fullReportAIContent" style="color: var(--text-primary); font-size: 0.85rem; line-height: 1.5;">
+                            <div style="display: flex; align-items: center; gap: 10px; color: var(--text-secondary);">
+                                <div style="width: 16px; height: 16px; border: 2px solid var(--purple); border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                                Analizando...
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="document.getElementById('fullReportModal').remove()" style="
+                        width: 100%;
+                        background: var(--blue);
+                        color: white;
+                        border: none;
+                        padding: 12px;
+                        border-radius: 8px;
+                        font-size: 1rem;
+                        cursor: pointer;
+                    ">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+            // Llamar a la IA
+            if (state.aiConnected) {
+                try {
+                    const activeInfo = active.length > 0
+                        ? `\nTRADES ACTIVOS (${active.length}):\n${active.map(t => `- ${t.symbol} ${t.action}: invertido $${t.amount.toFixed(0)}, P&L actual ${t.currentPnL >= 0 ? '+' : ''}$${t.currentPnL.toFixed(2)}`).join('\n')}`
+                        : '\nSin trades activos';
+
+                    const prompt = `Eres un coach de trading crypto. Analiza este reporte y da consejos CONCRETOS en español. Sé directo (máximo 5 puntos).
+
+RESUMEN GENERAL:
+- P&L Total: $${totalPnL.toFixed(2)} (Cerrado: $${closedPnL.toFixed(2)} + Activo: $${activePnL.toFixed(2)})
+- Capital invertido ahora: $${totalInvested.toFixed(0)}
+${activeInfo}
+
+HISTORIAL CERRADO (${history.length} trades):
+- Win Rate: ${winRate}%
+- Ganados: ${wins.length} | Perdidos: ${losses.length}
+${bestTrade ? `- Mejor: ${bestTrade.symbol} +$${bestTrade.pnl.toFixed(2)}` : ''}
+${worstTrade ? `- Peor: ${worstTrade.symbol} $${worstTrade.pnl.toFixed(2)}` : ''}
+
+DIRECCIÓN:
+- LONGs: ${longs.length} trades, ${longWinRate}% WR
+- SHORTs: ${shorts.length} trades, ${shortWinRate}% WR
+
+POR MONEDA:
+${symbolStats.slice(0, 5).map(s => `- ${s.symbol}: $${s.pnl.toFixed(2)} (${s.winRate}% WR)`).join('\n')}
+
+Responde:
+1. 📊 Evaluación (1 línea)
+2. ✅ Qué funciona
+3. ⚠️ Qué evitar
+4. 🎯 Sobre los trades activos (si hay): mantener, cerrar, o ajustar?
+5. 💡 Próximo paso
+
+Solo texto con emojis, NO markdown.`;
+
+                    const aiResponse = await callAI(prompt);
+                    document.getElementById('fullReportAIContent').innerHTML = aiResponse.replace(/\n/g, '<br>');
+                } catch (error) {
+                    document.getElementById('fullReportAIContent').innerHTML = `<span style="color: var(--red-light);">Error: ${error.message}</span>`;
+                }
+            } else {
+                document.getElementById('fullReportAIContent').innerHTML = `<span style="color: var(--text-secondary);">Conectá la IA para análisis personalizado.</span>`;
+            }
+        }
+
+        // =====================================================
         // CONTROLS
         // =====================================================
 
@@ -3508,9 +3761,7 @@ NO uses markdown, solo texto plano con emojis.`;
                 document.getElementById('btnStart').textContent = '🚀 Iniciar IA';
                 document.getElementById('botStatus').className = 'status-dot yellow';
                 document.getElementById('botStatusText').textContent = 'Bot: OFF';
-
-                // V9: Mostrar resumen de sesión
-                showSessionSummary();
+                showToast('Bot detenido', 'info');
             }
         }
 
