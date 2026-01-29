@@ -1108,6 +1108,7 @@
         </div>
         <div class="header-right">
             <div class="ai-provider-badge" id="providerBadge">Sin IA</div>
+            <span id="firebaseStatus" style="font-size: 0.75rem; margin-right: 8px; color: var(--text-secondary);">⚪ Sin config</span>
             <button class="btn btn-outline" style="width: auto; margin: 0; padding: 6px 12px; font-size: 0.85rem;" onclick="showConfigModal()">⚙️ Firebase</button>
         </div>
     </div>
@@ -2930,6 +2931,20 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
                         }
                     }
 
+                    // Actualizar indicador Firebase
+                    const indicator = document.getElementById('firebaseStatus');
+                    if (indicator) {
+                        if (state.firebaseUrl && state.userName) {
+                            indicator.textContent = '🟡 Conectando...';
+                            indicator.style.color = '#d29922';
+                            // Intentar sync inicial
+                            syncToFirebase();
+                        } else {
+                            indicator.textContent = '⚪ Sin config';
+                            indicator.style.color = 'var(--text-secondary)';
+                        }
+                    }
+
                 } catch (e) {
                     console.error('Error loading saved state:', e);
                 }
@@ -2941,7 +2956,10 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
         // =====================================================
 
         async function syncToFirebase() {
-            if (!state.firebaseUrl || !state.userName) return;
+            if (!state.firebaseUrl || !state.userName) {
+                console.log('Firebase sync skipped: URL o userName no configurado');
+                return;
+            }
 
             const data = {
                 balance: state.currentBalance,
@@ -2962,14 +2980,37 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
 
             try {
                 const url = `${state.firebaseUrl.replace(/\/$/, '')}/users/${state.userName}.json`;
-                await fetch(url, {
+                console.log('Firebase sync intentando:', url);
+
+                const response = await fetch(url, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-                console.log('Firebase sync OK');
+
+                if (response.ok) {
+                    console.log('Firebase sync OK ✓', new Date().toLocaleTimeString());
+                    // Actualizar indicador visual
+                    const indicator = document.getElementById('firebaseStatus');
+                    if (indicator) {
+                        indicator.textContent = '🟢 Sync';
+                        indicator.style.color = '#3fb950';
+                    }
+                } else {
+                    console.error('Firebase sync error HTTP:', response.status, response.statusText);
+                    const indicator = document.getElementById('firebaseStatus');
+                    if (indicator) {
+                        indicator.textContent = '🔴 Error';
+                        indicator.style.color = '#f85149';
+                    }
+                }
             } catch (e) {
                 console.error('Firebase sync error:', e);
+                const indicator = document.getElementById('firebaseStatus');
+                if (indicator) {
+                    indicator.textContent = '🔴 Error';
+                    indicator.style.color = '#f85149';
+                }
             }
         }
 
@@ -3028,6 +3069,20 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
             if (newInitialBalance !== state.initialBalance && state.tradeHistory.length === 0) {
                 state.initialBalance = newInitialBalance;
                 state.currentBalance = newInitialBalance;
+            }
+
+            // Actualizar indicador
+            const indicator = document.getElementById('firebaseStatus');
+            if (state.firebaseUrl && state.userName) {
+                if (indicator) {
+                    indicator.textContent = '🟡 Conectando...';
+                    indicator.style.color = '#d29922';
+                }
+            } else {
+                if (indicator) {
+                    indicator.textContent = '⚪ Sin config';
+                    indicator.style.color = 'var(--text-secondary)';
+                }
             }
 
             saveToLocal();
