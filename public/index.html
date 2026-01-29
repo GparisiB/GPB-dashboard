@@ -370,23 +370,24 @@
         }
 
         .strategy-preset-selector {
-            display: flex;
-            gap: 6px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
             margin-bottom: 8px;
         }
 
         .strategy-preset-option {
-            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 4px;
-            padding: 10px 5px;
+            padding: 12px 8px;
             background: var(--bg-tertiary);
             border: 2px solid transparent;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
+            min-width: 0;
         }
 
         .strategy-preset-option:hover {
@@ -397,6 +398,11 @@
         .strategy-preset-option.active[data-strategy="scalping"] {
             border-color: #f59e0b;
             background: rgba(245, 158, 11, 0.15);
+        }
+
+        .strategy-preset-option.active[data-strategy="scalpingAI"] {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.15);
         }
 
         .strategy-preset-option.active[data-strategy="swing"] {
@@ -410,19 +416,20 @@
         }
 
         .strategy-preset-option .strategy-icon {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
         }
 
         .strategy-preset-option .strategy-name {
             font-weight: 700;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-primary);
         }
 
         .strategy-preset-option .strategy-desc {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             color: var(--text-secondary);
             text-align: center;
+            line-height: 1.2;
         }
 
         .strategy-info {
@@ -759,6 +766,24 @@
         .pnl-value.positive { color: var(--green-light); }
         .pnl-value.negative { color: var(--red-light); }
 
+        /* V9: P&L Total destacado */
+        .trade-pnl.total {
+            background: rgba(63, 185, 80, 0.1);
+            margin: 5px -10px -10px -10px;
+            padding: 10px;
+            border-radius: 0 0 8px 8px;
+            border-top: 1px dashed var(--green);
+        }
+
+        .trade-pnl.total span:first-child {
+            color: var(--green-light);
+            font-weight: 600;
+        }
+
+        .trade-pnl.total .pnl-value {
+            font-size: 1.1rem;
+        }
+
         /* Break-even indicator */
         .trade-protection {
             display: flex;
@@ -877,22 +902,72 @@
             border-radius: 4px;
         }
 
-        /* ========== HISTORY ========== */
+        /* ========== HISTORY V9 ========== */
         .history-container {
-            max-height: 150px;
+            max-height: calc(100vh - 500px);
+            min-height: 200px;
             overflow-y: auto;
+        }
+
+        .win-loss-badge {
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
         }
 
         .history-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px;
-            border-bottom: 1px solid var(--border-color);
-            font-size: 0.8rem;
+            align-items: center;
+            padding: 10px 12px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            transform: translateX(3px);
+        }
+
+        .history-item.win {
+            background: rgba(63, 185, 80, 0.1);
+            border-left: 3px solid var(--green-light);
+        }
+
+        .history-item.loss {
+            background: rgba(248, 81, 73, 0.1);
+            border-left: 3px solid var(--red-light);
+        }
+
+        .history-item .symbol {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .history-item .action {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 6px;
+        }
+
+        .history-item .action.long {
+            background: rgba(63, 185, 80, 0.2);
+            color: var(--green-light);
+        }
+
+        .history-item .action.short {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--red-light);
         }
 
         .history-result {
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 0.9rem;
         }
 
         .history-result.win { color: var(--green-light); }
@@ -1227,17 +1302,22 @@
                     <div class="strategy-preset-option" data-strategy="scalping" onclick="setStrategy('scalping')">
                         <span class="strategy-icon">⚡</span>
                         <span class="strategy-name">Scalping</span>
-                        <span class="strategy-desc">Rápido, sin IA, día</span>
+                        <span class="strategy-desc">Ultra rápido</span>
+                    </div>
+                    <div class="strategy-preset-option" data-strategy="scalpingAI" onclick="setStrategy('scalpingAI')">
+                        <span class="strategy-icon">🤖</span>
+                        <span class="strategy-name">Scalp+IA</span>
+                        <span class="strategy-desc">Rápido + IA</span>
                     </div>
                     <div class="strategy-preset-option active" data-strategy="swing" onclick="setStrategy('swing')">
                         <span class="strategy-icon">🌙</span>
                         <span class="strategy-name">Swing</span>
-                        <span class="strategy-desc">Seguro, con IA, noche</span>
+                        <span class="strategy-desc">Noche/AFK</span>
                     </div>
                     <div class="strategy-preset-option" data-strategy="meanrev" onclick="setStrategy('meanrev')">
                         <span class="strategy-icon">📊</span>
                         <span class="strategy-name">MeanRev</span>
-                        <span class="strategy-desc">RSI extremo + IA</span>
+                        <span class="strategy-desc">RSI extremo</span>
                     </div>
                 </div>
                 <div class="strategy-info" id="strategyInfo">
@@ -1397,7 +1477,7 @@
             </div>
 
             <div class="panel-header" style="margin-top: 12px;">
-                <div class="panel-title">📜 Historial</div>
+                <div class="panel-title">📜 Historial <span id="historyWinLoss" class="win-loss-badge">0W / 0L</span></div>
             </div>
             <div class="history-container" id="historyContainer">
                 <div style="padding: 15px; text-align: center; color: var(--text-secondary);">Sin historial</div>
@@ -1580,7 +1660,7 @@
             scalping: {
                 name: 'Scalping',
                 icon: '⚡',
-                description: 'Trades rápidos, sin esperar IA',
+                description: 'Ultra rápido, solo indicadores',
                 useAI: false,
                 tp: 0.5,
                 sl: 0.5,
@@ -1595,10 +1675,28 @@
                 },
                 rsiExtreme: { enabled: false }
             },
+            scalpingAI: {
+                name: 'Scalp+IA',
+                icon: '🤖',
+                description: 'Scalping con confirmación IA',
+                useAI: true,
+                tp: 0.6,
+                sl: 0.4,
+                cooldown: 2,
+                maxTrades: 10,
+                minConfidence: 45,
+                tradePercent: 2,
+                filters: {
+                    trendFilter: true,
+                    volumeFilter: false,
+                    horarios: false
+                },
+                rsiExtreme: { enabled: false }
+            },
             swing: {
                 name: 'Swing',
                 icon: '🌙',
-                description: 'Trades seguros con confirmación IA',
+                description: 'Trades seguros, noche/AFK',
                 useAI: true,
                 tp: 2.0,
                 sl: 1.2,
@@ -1616,7 +1714,7 @@
             meanrev: {
                 name: 'MeanRev',
                 icon: '📊',
-                description: 'RSI extremo + confirmación IA',
+                description: 'RSI extremo + IA',
                 useAI: true,
                 tp: 1.5,
                 sl: 0.8,
@@ -2786,15 +2884,18 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
                     return o.score >= modeConfig.minScore && o.action !== 'OBSERVAR';
                 });
 
-                // En modo agresivo, SIEMPRE consultar a la IA si hay oportunidades
-                const shouldConsultAI = CONFIG.currentAIMode === 'aggressive'
+                // V9: Decidir si consultar IA o usar indicadores
+                const shouldAnalyze = CONFIG.currentAIMode === 'aggressive'
                     ? opportunities.length > 0
                     : goodOpps.length > 0;
 
-                if (state.aiConnected && shouldConsultAI) {
+                // V9: Si no usa IA (Scalping), o si usa IA y está conectada
+                const canProceed = !CONFIG.useAI || (CONFIG.useAI && state.aiConnected);
+
+                if (canProceed && shouldAnalyze) {
                     const oppsToAnalyze = CONFIG.currentAIMode === 'aggressive'
                         ? opportunities.slice(0, 8)  // Mas oportunidades en modo agresivo
-                        : goodOpps;
+                        : goodOpps.length > 0 ? goodOpps : opportunities.slice(0, 5);
                     const aiDecisions = await askAIForDecision(oppsToAnalyze);
 
                     // 5. Execute trades based on AI + filters
@@ -3021,6 +3122,12 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
                 const pnlClass = t.currentPnL >= 0 ? 'positive' : 'negative';
                 const pnlPercent = ((t.currentPnL / t.amount) * 100).toFixed(2);
 
+                // V9: Calcular P&L Total (cerrado + corriendo)
+                const partialPnL = t.partialPnL || 0;
+                const totalPnL = t.currentPnL + partialPnL;
+                const totalPnLClass = totalPnL >= 0 ? 'positive' : 'negative';
+                const totalPnLPercent = ((totalPnL / t.amount) * 100).toFixed(2);
+
                 return `
                     <div class="trade-card ${t.action.toLowerCase()}">
                         <div class="trade-header">
@@ -3035,14 +3142,20 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
                         </div>
                         <div class="trade-protection">
                             ${t.breakevenActivated ? '<span class="protection-badge be-active">BE Activo</span>' : ''}
-                            ${t.partialTPTaken ? `<span class="protection-badge partial">TP1: +$${t.partialPnL.toFixed(2)}</span>` : ''}
+                            ${t.partialTPTaken ? `<span class="protection-badge partial">TP1: +$${partialPnL.toFixed(2)}</span>` : ''}
                             ${t.trailingStopActivated ? '<span class="protection-badge trailing">Trail Activo</span>' : ''}
                             <span class="protection-badge size">Size: ${t.positionSizePercent?.toFixed(1) || '?'}%</span>
                         </div>
                         <div class="trade-pnl">
-                            <span>P&L</span>
+                            <span>P&L Actual</span>
                             <span class="pnl-value ${pnlClass}">${t.currentPnL >= 0 ? '+' : ''}$${t.currentPnL.toFixed(2)} (${pnlPercent}%)</span>
                         </div>
+                        ${t.partialTPTaken ? `
+                        <div class="trade-pnl total">
+                            <span>P&L Total</span>
+                            <span class="pnl-value ${totalPnLClass}">${totalPnL >= 0 ? '+' : ''}$${totalPnL.toFixed(2)} (${totalPnLPercent}%)</span>
+                        </div>
+                        ` : ''}
                     </div>
                 `;
             }).join('');
@@ -3091,14 +3204,28 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
         function renderHistory() {
             const container = document.getElementById('historyContainer');
 
+            // V9: Calcular wins y losses
+            const wins = state.tradeHistory.filter(t => t.pnl > 0).length;
+            const losses = state.tradeHistory.filter(t => t.pnl <= 0).length;
+
+            // V9: Actualizar contador Win/Loss
+            const winLossBadge = document.getElementById('historyWinLoss');
+            if (winLossBadge) {
+                winLossBadge.innerHTML = `<span style="color: var(--green-light)">${wins}W</span> / <span style="color: var(--red-light)">${losses}L</span>`;
+            }
+
             if (state.tradeHistory.length === 0) {
                 container.innerHTML = '<div style="padding: 15px; text-align: center; color: var(--text-secondary);">Sin historial</div>';
                 return;
             }
 
-            container.innerHTML = state.tradeHistory.slice(0, 15).map(t => `
-                <div class="history-item">
-                    <span>${t.symbol} <span style="color: ${t.action === 'LONG' ? 'var(--green-light)' : 'var(--red-light)'}">${t.action}</span></span>
+            // V9: Mostrar más trades y con mejor diseño
+            container.innerHTML = state.tradeHistory.slice(0, 50).map(t => `
+                <div class="history-item ${t.pnl >= 0 ? 'win' : 'loss'}">
+                    <div>
+                        <span class="symbol">${t.symbol.replace('USDT', '')}</span>
+                        <span class="action ${t.action.toLowerCase()}">${t.action}</span>
+                    </div>
                     <span class="history-result ${t.pnl >= 0 ? 'win' : 'loss'}">
                         ${t.pnl >= 0 ? '+' : ''}$${t.pnl.toFixed(2)}
                     </span>
