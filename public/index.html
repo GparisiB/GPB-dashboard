@@ -3113,12 +3113,21 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
 
         document.addEventListener('DOMContentLoaded', () => {
             loadFromLocal();
+            selectAI(state.aiProvider); // Inicializar badge de IA
             updateProtectionIndicators();
             fetchBinanceData(); // Test API connection
 
             document.getElementById('aiCalls').textContent = state.aiCalls;
             document.getElementById('aiCallsTop').textContent = state.aiCalls;
             document.getElementById('tradesBlocked').textContent = state.tradesBlocked;
+
+            // Actualizar badge si hay API key guardada
+            const savedKey = localStorage.getItem(`apiKey_${state.aiProvider}`);
+            if (savedKey) {
+                const providerConfig = CONFIG.aiProviders[state.aiProvider];
+                document.getElementById('providerBadge').textContent = providerConfig.name;
+                document.getElementById('providerBadge').style.background = 'var(--green)';
+            }
         });
     </script>
 </body>
