@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Trading Dashboard V8 - AI Optimizado</title>
+    <title>Crypto Trading Dashboard V9 - Multi-Estrategia</title>
     <style>
         :root {
             --bg-primary: #0a0e14;
@@ -358,6 +358,80 @@
         .api-key-input input:focus {
             border-color: var(--orange);
             outline: none;
+        }
+
+        /* ========== STRATEGY PRESET SELECTOR V9 ========== */
+        .strategy-preset-section {
+            background: linear-gradient(135deg, rgba(57, 197, 207, 0.15), rgba(163, 113, 247, 0.15));
+            border: 1px solid var(--cyan);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .strategy-preset-selector {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+
+        .strategy-preset-option {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 5px;
+            background: var(--bg-tertiary);
+            border: 2px solid transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .strategy-preset-option:hover {
+            background: var(--bg-card);
+            border-color: var(--border-color);
+        }
+
+        .strategy-preset-option.active[data-strategy="scalping"] {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.15);
+        }
+
+        .strategy-preset-option.active[data-strategy="swing"] {
+            border-color: var(--cyan);
+            background: rgba(57, 197, 207, 0.15);
+        }
+
+        .strategy-preset-option.active[data-strategy="meanrev"] {
+            border-color: var(--purple);
+            background: rgba(163, 113, 247, 0.15);
+        }
+
+        .strategy-preset-option .strategy-icon {
+            font-size: 1.5rem;
+        }
+
+        .strategy-preset-option .strategy-name {
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+        }
+
+        .strategy-preset-option .strategy-desc {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .strategy-info {
+            background: var(--bg-tertiary);
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--cyan);
+            text-align: center;
         }
 
         /* ========== AI MODE SELECTOR ========== */
@@ -1089,8 +1163,8 @@
     <!-- HEADER -->
     <div class="header">
         <div class="header-left">
-            <h1>CRYPTO TRADING V8</h1>
-            <div class="subtitle">AI Optimizado + Protecciones Avanzadas</div>
+            <h1>CRYPTO TRADING V9</h1>
+            <div class="subtitle">Multi-Estrategia: Scalping | Swing | MeanRev</div>
         </div>
         <div class="header-center">
             <div class="status-badge">
@@ -1144,6 +1218,33 @@
             <button class="btn btn-ai" id="btnStart" onclick="toggleAI()">🚀 Iniciar IA</button>
             <button class="btn btn-outline" onclick="resetSystem()">🗑️ Reset</button>
 
+            <!-- NUEVO V9: Strategy Selector -->
+            <div class="strategy-preset-section">
+                <div class="panel-header">
+                    <div class="panel-title">🚀 Estrategia V9</div>
+                </div>
+                <div class="strategy-preset-selector">
+                    <div class="strategy-preset-option" data-strategy="scalping" onclick="setStrategy('scalping')">
+                        <span class="strategy-icon">⚡</span>
+                        <span class="strategy-name">Scalping</span>
+                        <span class="strategy-desc">Rápido, sin IA, día</span>
+                    </div>
+                    <div class="strategy-preset-option active" data-strategy="swing" onclick="setStrategy('swing')">
+                        <span class="strategy-icon">🌙</span>
+                        <span class="strategy-name">Swing</span>
+                        <span class="strategy-desc">Seguro, con IA, noche</span>
+                    </div>
+                    <div class="strategy-preset-option" data-strategy="meanrev" onclick="setStrategy('meanrev')">
+                        <span class="strategy-icon">📊</span>
+                        <span class="strategy-name">MeanRev</span>
+                        <span class="strategy-desc">RSI extremo + IA</span>
+                    </div>
+                </div>
+                <div class="strategy-info" id="strategyInfo">
+                    <span>🌙 Swing: TP 2% | SL 1.2% | Cooldown 7min | Con IA</span>
+                </div>
+            </div>
+
             <!-- AI Mode Selector -->
             <div class="ai-mode-section">
                 <div class="panel-header">
@@ -1171,7 +1272,7 @@
             <!-- Strategy Section -->
             <div class="panel strategy-section">
                 <div class="panel-header">
-                    <div class="panel-title">🛡️ Protecciones V8</div>
+                    <div class="panel-title">🛡️ Protecciones V9</div>
                 </div>
                 <div class="strategy-toggles">
                     <label class="strategy-toggle active" id="toggleBreakeven">
@@ -1414,7 +1515,15 @@
                 },
                 dynamicRR: {
                     enabled: true,
-                    useATR: true
+                    useATR: true,
+                    tpPercent: 2.0,    // V9: TP por defecto
+                    slPercent: 1.2     // V9: SL por defecto
+                },
+                // V9: RSI Extreme Filter (para MeanRev)
+                rsiExtreme: {
+                    enabled: false,
+                    oversold: 30,
+                    overbought: 70
                 },
                 // NUEVO: Trailing Stop
                 trailingStop: {
@@ -1432,7 +1541,10 @@
                 }
             },
             // Max trades ampliado para backtesting
-            maxTrades: 5
+            maxTrades: 5,
+            // V9: Nuevos campos
+            useAI: true,           // Si usa IA o solo indicadores
+            minConfidence: 50      // Confianza minima
         };
 
         // State
@@ -1459,6 +1571,141 @@
         // =====================================================
         // AI MODE SELECTOR
         // =====================================================
+
+        // =====================================================
+        // V9: STRATEGY PRESETS
+        // =====================================================
+
+        const STRATEGY_PRESETS = {
+            scalping: {
+                name: 'Scalping',
+                icon: '⚡',
+                description: 'Trades rápidos, sin esperar IA',
+                useAI: false,
+                tp: 0.5,
+                sl: 0.5,
+                cooldown: 1,
+                maxTrades: 15,
+                minConfidence: 30,
+                tradePercent: 2,
+                filters: {
+                    trendFilter: false,
+                    volumeFilter: false,
+                    horarios: false
+                },
+                rsiExtreme: { enabled: false }
+            },
+            swing: {
+                name: 'Swing',
+                icon: '🌙',
+                description: 'Trades seguros con confirmación IA',
+                useAI: true,
+                tp: 2.0,
+                sl: 1.2,
+                cooldown: 7,
+                maxTrades: 5,
+                minConfidence: 60,
+                tradePercent: 3,
+                filters: {
+                    trendFilter: true,
+                    volumeFilter: true,
+                    horarios: false
+                },
+                rsiExtreme: { enabled: false }
+            },
+            meanrev: {
+                name: 'MeanRev',
+                icon: '📊',
+                description: 'RSI extremo + confirmación IA',
+                useAI: true,
+                tp: 1.5,
+                sl: 0.8,
+                cooldown: 5,
+                maxTrades: 8,
+                minConfidence: 50,
+                tradePercent: 2,
+                filters: {
+                    trendFilter: true,
+                    volumeFilter: false,
+                    horarios: false
+                },
+                rsiExtreme: {
+                    enabled: true,
+                    oversold: 30,
+                    overbought: 70
+                }
+            }
+        };
+
+        let currentStrategy = 'swing';
+
+        function setStrategy(strategy) {
+            currentStrategy = strategy;
+            const preset = STRATEGY_PRESETS[strategy];
+
+            // Update UI
+            document.querySelectorAll('.strategy-preset-option').forEach(el => el.classList.remove('active'));
+            document.querySelector(`[data-strategy="${strategy}"]`).classList.add('active');
+
+            // Apply preset
+            CONFIG.protections.dynamicRR.tpPercent = preset.tp;
+            CONFIG.protections.dynamicRR.slPercent = preset.sl;
+            CONFIG.protections.cooldown.durationMinutes = preset.cooldown;
+            CONFIG.maxTrades = preset.maxTrades;
+            CONFIG.minConfidence = preset.minConfidence;
+            CONFIG.useAI = preset.useAI;
+
+            // Update sliders
+            document.getElementById('minConfidence').value = preset.minConfidence;
+            document.getElementById('minConfidenceValue').textContent = preset.minConfidence + '%';
+            document.getElementById('tradePercent').value = preset.tradePercent;
+            document.getElementById('tradePercentValue').textContent = preset.tradePercent + '%';
+            document.getElementById('cooldownMin').value = preset.cooldown;
+            document.getElementById('cooldownMinValue').textContent = preset.cooldown;
+
+            // Update filters
+            CONFIG.protections.trendFilter.enabled = preset.filters.trendFilter;
+            CONFIG.protections.volumeFilter.enabled = preset.filters.volumeFilter;
+            CONFIG.protections.horarios.enabled = preset.filters.horarios;
+
+            // RSI Extreme filter for MeanRev
+            CONFIG.protections.rsiExtreme = preset.rsiExtreme;
+
+            // Update toggle UI
+            updateProtectionToggles();
+
+            // Update info display
+            const infoText = `${preset.icon} ${preset.name}: TP ${preset.tp}% | SL ${preset.sl}% | Cooldown ${preset.cooldown}min | ${preset.useAI ? 'Con IA' : 'Sin IA'}`;
+            document.getElementById('strategyInfo').innerHTML = `<span>${infoText}</span>`;
+
+            // Show toast
+            showToast(`Estrategia ${preset.name} activada - ${preset.description}`, 'info');
+
+            // Update AI response
+            document.getElementById('aiMainResponse').textContent = `Estrategia ${preset.name}: ${preset.description}`;
+
+            saveToLocal();
+        }
+
+        function updateProtectionToggles() {
+            const toggleMap = {
+                'toggleTrendFilter': CONFIG.protections.trendFilter.enabled,
+                'toggleVolumeFilter': CONFIG.protections.volumeFilter.enabled,
+                'toggleHorarios': CONFIG.protections.horarios.enabled,
+                'toggleCooldown': CONFIG.protections.cooldown.enabled,
+                'toggleBreakeven': CONFIG.protections.breakeven.enabled,
+                'togglePartialTP': CONFIG.protections.partialTP.enabled
+            };
+
+            for (const [id, enabled] of Object.entries(toggleMap)) {
+                const toggle = document.getElementById(id);
+                if (toggle) {
+                    toggle.classList.toggle('active', enabled);
+                    const checkbox = toggle.querySelector('input[type="checkbox"]');
+                    if (checkbox) checkbox.checked = enabled;
+                }
+            }
+        }
 
         function setAIMode(mode) {
             CONFIG.currentAIMode = mode;
@@ -1895,11 +2142,90 @@
         }
 
         // =====================================================
-        // AI TRADING LOGIC (MEJORADO V8)
+        // V9: DECISION SIN IA (PARA SCALPING)
+        // =====================================================
+
+        function generateDecisionsWithoutAI(opportunities) {
+            const decisions = [];
+            const preset = STRATEGY_PRESETS[currentStrategy];
+
+            for (const opp of opportunities) {
+                // Filtro RSI Extreme para MeanRev
+                if (preset.rsiExtreme && preset.rsiExtreme.enabled) {
+                    if (opp.rsi > preset.rsiExtreme.oversold && opp.rsi < preset.rsiExtreme.overbought) {
+                        continue; // Skip si RSI no es extremo
+                    }
+                }
+
+                // Determinar acción basada en indicadores
+                let action = 'SKIP';
+                let confidence = 0;
+                let reasons = [];
+
+                const rsi = opp.rsi || 50;
+                const macd = opp.macd || 'neutral';
+                const score = opp.score || 0;
+
+                // Lógica para LONG
+                if (rsi < 35 && (macd === 'bullish' || score >= 45)) {
+                    action = 'LONG';
+                    confidence = Math.min(85, 50 + (35 - rsi) + (score - 40));
+                    reasons.push(`RSI sobreventa (${rsi})`);
+                    if (macd === 'bullish') reasons.push('MACD bullish');
+                }
+                // Lógica para SHORT
+                else if (rsi > 65 && (macd === 'bearish' || score >= 45)) {
+                    action = 'SHORT';
+                    confidence = Math.min(85, 50 + (rsi - 65) + (score - 40));
+                    reasons.push(`RSI sobrecompra (${rsi})`);
+                    if (macd === 'bearish') reasons.push('MACD bearish');
+                }
+                // Score alto sin RSI extremo
+                else if (score >= 55) {
+                    action = opp.action || (macd === 'bullish' ? 'LONG' : macd === 'bearish' ? 'SHORT' : 'SKIP');
+                    confidence = Math.min(75, score);
+                    reasons.push(`Score alto (${score})`);
+                }
+
+                if (action !== 'SKIP' && confidence >= 40) {
+                    decisions.push({
+                        symbol: opp.symbol,
+                        action: action,
+                        confidence: confidence,
+                        reason: `Scalping: ${reasons.join(', ')}`,
+                        tp: preset.tp,
+                        sl: preset.sl
+                    });
+                }
+            }
+
+            // Update UI
+            if (decisions.length > 0) {
+                document.getElementById('aiMainResponse').textContent =
+                    `⚡ Scalping: ${decisions.length} señales detectadas por indicadores técnicos`;
+            } else {
+                document.getElementById('aiMainResponse').textContent =
+                    `⚡ Scalping: Sin señales claras en este momento`;
+            }
+            document.getElementById('aiMainResponse').style.display = 'flex';
+            document.getElementById('aiThinkingBar').style.display = 'none';
+
+            return decisions;
+        }
+
+        // =====================================================
+        // AI TRADING LOGIC (MEJORADO V9)
         // =====================================================
 
         async function askAIForDecision(opportunities) {
-            if (!state.aiConnected || opportunities.length === 0) return [];
+            if (opportunities.length === 0) return [];
+
+            // V9: Si la estrategia no usa IA, usar lógica de indicadores
+            if (!CONFIG.useAI) {
+                return generateDecisionsWithoutAI(opportunities);
+            }
+
+            if (!state.aiConnected) return [];
 
             const modeConfig = getAIModeConfig();
             const topOpps = opportunities.slice(0, 5);
@@ -3114,6 +3440,7 @@ Responde JSON: {"decisions":[{"symbol":"X","action":"LONG/SHORT/SKIP","confidenc
         document.addEventListener('DOMContentLoaded', () => {
             loadFromLocal();
             selectAI(state.aiProvider); // Inicializar badge de IA
+            setStrategy(currentStrategy); // V9: Inicializar estrategia
             updateProtectionIndicators();
             fetchBinanceData(); // Test API connection
 
