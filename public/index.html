@@ -1286,8 +1286,12 @@
             </div>
 
             <div class="api-key-input">
-                <label>API Key</label>
-                <input type="password" id="apiKeyInput" placeholder="Ingresa tu API Key...">
+                <label>API Key 1 <span id="apiKey1Status" style="font-size: 0.7rem; color: var(--green-light);">●</span></label>
+                <input type="password" id="apiKeyInput" placeholder="API Key principal...">
+            </div>
+            <div class="api-key-input">
+                <label>API Key 2 <span id="apiKey2Status" style="font-size: 0.7rem; color: var(--text-secondary);">○</span></label>
+                <input type="password" id="apiKeyInput2" placeholder="API Key alternativa (opcional)...">
             </div>
 
             <button class="btn btn-ai" id="btnStart" onclick="toggleAI()">🚀 Iniciar IA</button>
@@ -1842,13 +1846,20 @@
             document.getElementById('providerBadge').textContent = providerConfig.name;
             document.getElementById('aiModelBadge').textContent = `${providerConfig.name} - ${providerConfig.model}`;
 
-            // Cargar API key guardada
+            // Cargar API keys guardadas
             const savedKey = localStorage.getItem(`apiKey_${provider}`);
+            const savedKey2 = localStorage.getItem(`apiKey2_${provider}`);
             if (savedKey) {
                 document.getElementById('apiKeyInput').value = savedKey;
             } else {
                 document.getElementById('apiKeyInput').value = '';
             }
+            if (savedKey2) {
+                document.getElementById('apiKeyInput2').value = savedKey2;
+            } else {
+                document.getElementById('apiKeyInput2').value = '';
+            }
+            updateApiKeyIndicators();
         }
 
         async function testAIConnection() {
@@ -1864,9 +1875,15 @@
                 const response = await callAI('Responde solo con: OK');
                 if (response) {
                     state.aiConnected = true;
-                    localStorage.setItem(`apiKey_${state.aiProvider}`, apiKey);
+                    // Guardar ambas API keys
+                    const apiKey1 = document.getElementById('apiKeyInput').value.trim();
+                    const apiKey2 = document.getElementById('apiKeyInput2').value.trim();
+                    if (apiKey1) localStorage.setItem(`apiKey_${state.aiProvider}`, apiKey1);
+                    if (apiKey2) localStorage.setItem(`apiKey2_${state.aiProvider}`, apiKey2);
                     updateAIConnectionStatus(true);
-                    showToast(`${provider.name} conectado!`, 'success');
+                    updateApiKeyIndicators();
+                    const keysCount = [apiKey1, apiKey2].filter(k => k).length;
+                    showToast(`${provider.name} conectado! (${keysCount} API Key${keysCount > 1 ? 's' : ''})`, 'success');
                     return true;
                 }
             } catch (error) {
@@ -1878,51 +1895,142 @@
             return false;
         }
 
+        // V9: Sistema de API Keys alternantes
+        let currentApiKeyIndex = 0;
+        let apiKeyErrors = [0, 0]; // Contador de errores por key
+
+        function getActiveApiKey() {
+            const key1 = document.getElementById('apiKeyInput').value.trim();
+            const key2 = document.getElementById('apiKeyInput2').value.trim();
+
+            const keys = [key1, key2].filter(k => k.length > 0);
+            if (keys.length === 0) return null;
+
+            // Alternar entre keys disponibles
+            const activeKey = keys[currentApiKeyIndex % keys.length];
+            return activeKey;
+        }
+
+        function switchApiKey() {
+            const key1 = document.getElementById('apiKeyInput').value.trim();
+            const key2 = document.getElementById('apiKeyInput2').value.trim();
+            const keys = [key1, key2].filter(k => k.length > 0);
+
+            if (keys.length > 1) {
+                currentApiKeyIndex = (currentApiKeyIndex + 1) % keys.length;
+                updateApiKeyIndicators();
+                showToast(`🔄 Cambiando a API Key ${currentApiKeyIndex + 1}`, 'info');
+            }
+        }
+
+        function updateApiKeyIndicators() {
+            const key1 = document.getElementById('apiKeyInput').value.trim();
+            const key2 = document.getElementById('apiKeyInput2').value.trim();
+
+            const status1 = document.getElementById('apiKey1Status');
+            const status2 = document.getElementById('apiKey2Status');
+
+            if (key1 && currentApiKeyIndex === 0) {
+                status1.textContent = '●';
+                status1.style.color = 'var(--green-light)';
+            } else if (key1) {
+                status1.textContent = '○';
+                status1.style.color = 'var(--text-secondary)';
+            } else {
+                status1.textContent = '○';
+                status1.style.color = 'var(--red-light)';
+            }
+
+            if (key2 && currentApiKeyIndex === 1) {
+                status2.textContent = '●';
+                status2.style.color = 'var(--green-light)';
+            } else if (key2) {
+                status2.textContent = '○';
+                status2.style.color = 'var(--text-secondary)';
+            } else {
+                status2.textContent = '○';
+                status2.style.color = 'var(--text-secondary)';
+            }
+        }
+
         async function callAI(prompt) {
-            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            const apiKey = getActiveApiKey();
+            if (!apiKey) throw new Error('No hay API Key configurada');
+
             const provider = CONFIG.aiProviders[state.aiProvider];
 
             state.aiCalls++;
             document.getElementById('aiCalls').textContent = state.aiCalls;
             document.getElementById('aiCallsTop').textContent = state.aiCalls;
 
-            if (state.aiProvider === 'claude') {
-                const response = await fetch(provider.url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-api-key': apiKey,
-                        'anthropic-version': '2023-06-01',
-                        'anthropic-dangerous-direct-browser-access': 'true'
-                    },
-                    body: JSON.stringify({
-                        model: provider.model,
-                        max_tokens: 500,
-                        messages: [{ role: 'user', content: prompt }]
-                    })
-                });
+            try {
+                let response, data;
 
-                const data = await response.json();
-                if (data.error) throw new Error(data.error.message);
-                return data.content[0].text;
-            } else {
-                const response = await fetch(provider.url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        model: provider.model,
-                        messages: [{ role: 'user', content: prompt }],
-                        max_tokens: 500,
-                        temperature: 0.3
-                    })
-                });
+                if (state.aiProvider === 'claude') {
+                    response = await fetch(provider.url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': apiKey,
+                            'anthropic-version': '2023-06-01',
+                            'anthropic-dangerous-direct-browser-access': 'true'
+                        },
+                        body: JSON.stringify({
+                            model: provider.model,
+                            max_tokens: 500,
+                            messages: [{ role: 'user', content: prompt }]
+                        })
+                    });
 
-                const data = await response.json();
-                if (data.error) throw new Error(data.error.message);
-                return data.choices[0].message.content;
+                    data = await response.json();
+                    if (data.error) throw new Error(data.error.message);
+
+                    // Éxito - alternar para próxima llamada
+                    switchApiKey();
+                    return data.content[0].text;
+                } else {
+                    response = await fetch(provider.url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify({
+                            model: provider.model,
+                            messages: [{ role: 'user', content: prompt }],
+                            max_tokens: 500,
+                            temperature: 0.3
+                        })
+                    });
+
+                    data = await response.json();
+
+                    // Detectar rate limit
+                    if (data.error && data.error.message && data.error.message.includes('Rate limit')) {
+                        showToast(`⚠️ API Key ${currentApiKeyIndex + 1} sin tokens, cambiando...`, 'error');
+                        switchApiKey();
+
+                        // Reintentar con la otra key
+                        const newKey = getActiveApiKey();
+                        if (newKey && newKey !== apiKey) {
+                            return await callAI(prompt); // Reintentar
+                        } else {
+                            throw new Error('Todas las API Keys sin tokens');
+                        }
+                    }
+
+                    if (data.error) throw new Error(data.error.message);
+
+                    // Éxito - alternar para próxima llamada
+                    switchApiKey();
+                    return data.choices[0].message.content;
+                }
+            } catch (error) {
+                // Si hay error de rate limit, intentar cambiar
+                if (error.message.includes('Rate limit') || error.message.includes('rate_limit')) {
+                    switchApiKey();
+                }
+                throw error;
             }
         }
 
