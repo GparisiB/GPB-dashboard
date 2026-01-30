@@ -4087,20 +4087,26 @@ Solo texto con emojis, NO markdown.`;
                     `${c.symbol}: ${c.change24h >= 0 ? '+' : ''}${c.change24h.toFixed(2)}% (Vol: ${(c.volume/1000000).toFixed(1)}M)`
                 ).join('\n');
 
-                const prompt = `Eres un analista de crypto trading. Analiza estos datos de las últimas 24h y recomienda cuáles cryptos ACTIVAR y cuáles DESACTIVAR para trading hoy.
+                const allSymbols = allData.map(c => c.symbol);
+                const prompt = `Eres un analista de crypto trading. Analiza estos datos de las últimas 24h y CLASIFICA TODAS las ${allSymbols.length} cryptos.
 
 DATOS DEL MERCADO (cambio 24h y volumen):
 ${marketSummary}
 
-Criterios:
-- ACTIVAR: Buen volumen, volatilidad moderada (2-8%), tendencia clara
-- DESACTIVAR: Volumen bajo, muy lateral (<1%), demasiado volátil (>15% sin tendencia clara)
+IMPORTANTE: Debes clasificar TODAS las ${allSymbols.length} cryptos. Cada una debe estar en "activar" o "desactivar".
 
-Responde SOLO con este formato JSON:
+Lista completa de símbolos a clasificar:
+${allSymbols.join(', ')}
+
+Criterios:
+- ACTIVAR: Buen volumen, volatilidad moderada (1-10%), tendencia clara o momentum
+- DESACTIVAR: Volumen bajo, muy lateral (<0.5%), demasiado volátil (>15% sin dirección)
+
+Responde SOLO con este formato JSON (incluye TODAS las ${allSymbols.length} cryptos):
 {
-  "activar": ["BTCUSDT", "ETHUSDT", ...],
-  "desactivar": ["SIMBOLO1", "SIMBOLO2", ...],
-  "razon": "Explicación breve de 1-2 líneas"
+  "activar": ["SYMBOL1", "SYMBOL2", ...],
+  "desactivar": ["SYMBOL3", "SYMBOL4", ...],
+  "razon": "Explicación breve"
 }
 
 Solo el JSON, nada más.`;
