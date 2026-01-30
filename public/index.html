@@ -4170,6 +4170,9 @@ Solo el JSON, nada más.`;
             const desactivar = recommendation.desactivar || [];
             const razon = recommendation.razon || '';
 
+            // Guardar en variable global para el botón
+            window.pendingCryptoRecommendation = { activar, desactivar };
+
             modal.innerHTML = `
                 <div style="
                     background: var(--bg-secondary);
@@ -4220,7 +4223,7 @@ Solo el JSON, nada más.`;
                     ` : ''}
 
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button id="btnAplicarRecomendacion" style="
+                        <button onclick="applyPendingRecommendation()" style="
                             flex: 1;
                             background: var(--green);
                             color: white;
@@ -4249,11 +4252,12 @@ Solo el JSON, nada más.`;
             `;
 
             document.body.appendChild(modal);
+        }
 
-            // Agregar evento al botón después de añadirlo al DOM
-            document.getElementById('btnAplicarRecomendacion').addEventListener('click', () => {
-                applyCryptoRecommendations(activar, desactivar);
-            });
+        function applyPendingRecommendation() {
+            if (!window.pendingCryptoRecommendation) return;
+            const { activar, desactivar } = window.pendingCryptoRecommendation;
+            applyCryptoRecommendations(activar, desactivar);
         }
 
         function applyCryptoRecommendations(activar, desactivar) {
