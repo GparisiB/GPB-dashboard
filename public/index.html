@@ -4220,7 +4220,7 @@ Solo el JSON, nada más.`;
                     ` : ''}
 
                     <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button onclick="applyCryptoRecommendations(${JSON.stringify(activar)}, ${JSON.stringify(desactivar)})" style="
+                        <button id="btnAplicarRecomendacion" style="
                             flex: 1;
                             background: var(--green);
                             color: white;
@@ -4249,6 +4249,11 @@ Solo el JSON, nada más.`;
             `;
 
             document.body.appendChild(modal);
+
+            // Agregar evento al botón después de añadirlo al DOM
+            document.getElementById('btnAplicarRecomendacion').addEventListener('click', () => {
+                applyCryptoRecommendations(activar, desactivar);
+            });
         }
 
         function applyCryptoRecommendations(activar, desactivar) {
